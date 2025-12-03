@@ -1,0 +1,127 @@
+@import "tailwindcss";
+
+:root {
+  /* Primary Theme Colors */
+  --color-primary: 59 130 246; /* Main brand color */
+  --color-primary-hover: 37 99 235; /* Primary hover state */
+  --color-primary-light: 219 234 254; /* Light primary variant */
+  --color-primary-foreground: 255 255 255; /* Text on primary */
+
+  /* Secondary Theme Colors */
+  --color-secondary: 148 163 184;
+  --color-secondary-hover: 100 116 139;
+  --color-secondary-foreground: 255 255 255;
+
+  /* Accent Colors */
+  --color-accent: 59 130 246; /* Accent color for highlights */
+  --color-accent-hover: 37 99 235;
+  --color-accent-foreground: 255 255 255;
+
+  /* Background Colors - Layered approach */
+  --color-background: 255 255 255; /* Base background */
+  --color-foreground: 15 23 42; /* Base text color */
+
+  --color-bg-primary: 255 255 255; /* Main backgrounds - sidebar, topbar, cards */
+  --color-bg-secondary: 248 250 252; /* Main content area background */
+  --color-bg-tertiary: 241 245 249; /* Hover states, secondary cards */
+  --color-bg-elevated: 255 255 255; /* Modals, popovers, dropdowns */
+  --color-bg-hover: 248 250 252; /* Hover background for buttons/items */
+  --color-bg-active: 241 245 249; /* Active state background */
+  --color-bg-muted: 248 250 252; /* Muted/disabled backgrounds */
+
+  /* Text Colors - Hierarchical */
+  --color-text-primary: 15 23 42; /* Primary text - headings, labels */
+  --color-text-secondary: 71 85 105; /* Secondary text - descriptions */
+  --color-text-tertiary: 148 163 184; /* Tertiary text - muted, placeholders */
+  --color-text-inverse: 255 255 255; /* Text on dark backgrounds */
+  --color-text-muted: 148 163 184; /* Muted text - hints, disabled */
+  --color-text-accent: 59 130 246; /* Accent text color */
+
+  /* Border Colors */
+  --color-border: 226 232 240; /* Default borders */
+  --color-border-hover: 203 213 225; /* Hover state borders */
+  --color-border-focus: 59 130 246; /* Focus state borders */
+  --color-border-muted: 241 245 249; /* Subtle borders */
+
+  /* Card Colors */
+  --color-card-bg: 255 255 255; /* Card backgrounds */
+  --color-card-border: 226 232 240; /* Card borders */
+  --color-card-hover: 248 250 252; /* Card hover state */
+  --color-card-foreground: 15 23 42; /* Card text */
+
+  /* Muted Colors */
+  --color-muted: 248 250 252; /* Muted background */
+  --color-muted-foreground: 100 116 139; /* Muted text */
+
+  /* Destructive */
+  --color-destructive: 239 68 68; /* Error/delete color */
+  --color-destructive-foreground: 255 255 255;
+
+  /* Success Colors */
+  --color-success: 0 188 125;
+  --color-success-bg: 0 188 125;
+  --color-success-foreground: 255 255 255;
+
+  /* Warning Colors */
+  --color-warning: 254 154 0;
+  --color-warning-bg: 225 113 0;
+  --color-warning-foreground: 255 255 255;
+
+  /* Info Colors */
+  --color-info: 0 184 219;
+  --color-info-bg: 0 146 184;
+  --color-info-foreground: 255 255 255;
+
+  /* Shadow */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+
+  /* Spacing */
+  --sidebar-width: 224px;
+  --sidebar-collapsed-width: 64px;
+  --topbar-height: 64px;
+  --team-panel-height: 220px;
+  --team-panel-collapsed-height: 49px;
+}
+
+body {
+  margin: 0;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  background: rgb(var(--color-bg-secondary));
+  color: rgb(var(--color-text-primary));
+  overflow-x: hidden;
+}
+
+h1 {
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 38.4px;
+  letter-spacing: -0.64px;
+  margin: 0;
+}
+
+h2 {
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 32px;
+  margin: 0;
+}
+
+h3 {
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 28px;
+  margin: 0;
+}
+
+p {
+  font-size: 14px;
+  line-height: 22.4px;
+  margin: 0;
+}
+
+button {
+  font-family: inherit;
+}

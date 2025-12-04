@@ -1,96 +1,188 @@
 import {
-  Home,
-  Layers,
-  HelpCircle,
-  Users,
-  Settings,
+  BarChart3,
   ChevronLeft,
   ChevronRight,
-  Zap,
+  Edit3,
+  HelpCircle,
+  Home,
+  LayoutGrid,
+  Layers,
   Maximize2,
   Minimize2,
-  LayoutGrid,
-  Edit3,
-  BarChart3,
+  Palette,
+  Settings,
+  Users,
+  Zap,
 } from "lucide-react";
-import svgPaths from "../imports/svg-paths";
-import { useState } from "react";
 import { motion } from "framer-motion";
+import {
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ElementType,
+} from "react";
+
+import { useInterfaceState } from "../hooks/useInterfaceState";
+import svgPaths from "../imports/svg-paths";
 
 interface SidebarProps {
-  isCollapsed: boolean;
+  collapsed: boolean;
   onToggleCollapse: () => void;
-  activeTab: string;
-  onTabChange: (tab: string) => void;
+  currentRoute: string;
+  onNavigate: (tab: string) => void;
+  onOpenSchedule: () => void;
   onToggleFullscreen: () => void;
   isFullscreen: boolean;
-  onToggleTopBar: () => void;
-  isTopBarVisible: boolean;
+  onToggleTopbar: () => void;
+  isTopbarVisible: boolean;
   onToggleEditMode: () => void;
   isEditMode: boolean;
-  onShowStats: () => void;
+  onToggleStatsPanel: () => void;
+  statsPanelOpen: boolean;
+  onToggleThemePanel: () => void;
+  themePanelOpen: boolean;
 }
 
+interface QuickAction {
+  id: string;
+  label: string;
+  sublabel?: string;
+  icon: ElementType;
+  onClick: () => void;
+  background: string;
+  active?: boolean;
+}
+
+const tooltipStyles = {
+  backgroundColor: "rgb(var(--color-bg-elevated))",
+  color: "rgb(var(--color-text-primary))",
+  border: "1px solid rgb(var(--color-border))",
+  boxShadow: "0 8px 20px rgba(15, 23, 42, 0.15)",
+} as const;
+
+const menuItems = [
+  { id: "home", label: "Home", icon: Home, svg: null },
+  { id: "rounds", label: "Rounds", icon: Layers, svg: "rounds" },
+  { id: "questions", label: "Questions", icon: HelpCircle, svg: null },
+  { id: "teams", label: "Teams", icon: Users, svg: null },
+  { id: "settings", label: "Settings", icon: Settings, svg: null },
+];
+
 export function Sidebar({
-  isCollapsed,
+  collapsed,
   onToggleCollapse,
-  activeTab,
-  onTabChange,
+  currentRoute,
+  onNavigate,
+  onOpenSchedule,
   onToggleFullscreen,
   isFullscreen,
-  onToggleTopBar,
-  isTopBarVisible,
+  onToggleTopbar,
+  isTopbarVisible,
   onToggleEditMode,
   isEditMode,
-  onShowStats,
+  onToggleStatsPanel,
+  statsPanelOpen,
+  onToggleThemePanel,
+  themePanelOpen,
 }: SidebarProps) {
   const [logoHovered, setLogoHovered] = useState(false);
   const [quickActionsExpanded, setQuickActionsExpanded] = useState(false);
-  const tooltipStyles = {
-    backgroundColor: "rgb(var(--color-bg-elevated))",
-    color: "rgb(var(--color-text-primary))",
-    border: "1px solid rgb(var(--color-border))",
-    boxShadow: "0 8px 20px rgba(15, 23, 42, 0.15)",
-  } as const;
+  const quickActionsRef = useRef<HTMLDivElement | null>(null);
+  const { registerAnchor } = useInterfaceState();
 
-  const menuItems = [
-    { id: "home", label: "Home", icon: Home, svg: null },
-    { id: "rounds", label: "Rounds", icon: Layers, svg: "rounds" },
-    { id: "questions", label: "Questions", icon: HelpCircle, svg: null },
-    { id: "teams", label: "Teams", icon: Users, svg: null },
-    { id: "settings", label: "Settings", icon: Settings, svg: null },
-  ];
+  const quickActions = useMemo<QuickAction[]>(
+    () => [
+      {
+        id: "stats",
+        icon: BarChart3,
+        label: statsPanelOpen ? "Hide Stats" : "Show Stats",
+        sublabel: "Performance digest",
+        onClick: onToggleStatsPanel,
+        background: "rgba(46, 255, 201, 0.35)",
+        active: statsPanelOpen,
+      },
+      {
+        id: "themes",
+        icon: Palette,
+        label: themePanelOpen ? "Hide Themes" : "Theme Library",
+        sublabel: "Palette explorer",
+        onClick: onToggleThemePanel,
+        background: "rgba(255, 210, 160, 0.35)",
+        active: themePanelOpen,
+      },
+      {
+        id: "fullscreen",
+        icon: isFullscreen ? Minimize2 : Maximize2,
+        label: isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen",
+        sublabel: "Focus mode",
+        onClick: onToggleFullscreen,
+        background: "rgb(var(--color-info))",
+        active: isFullscreen,
+      },
+      {
+        id: "topbar",
+        icon: LayoutGrid,
+        label: isTopbarVisible ? "Hide Top Bar" : "Show Top Bar",
+        sublabel: "Toggle controls",
+        onClick: onToggleTopbar,
+        background: "rgb(var(--color-warning))",
+        active: !isTopbarVisible,
+      },
+      {
+        id: "edit",
+        icon: Edit3,
+        label: isEditMode ? "Disable Edit Mode" : "Enable Edit Mode",
+        sublabel: "Rearrange layout",
+        onClick: onToggleEditMode,
+        background: "rgb(var(--color-success))",
+        active: isEditMode,
+      },
+    ],
+    [
+      isEditMode,
+      isFullscreen,
+      isTopbarVisible,
+      onOpenSchedule,
+      onToggleEditMode,
+      onToggleFullscreen,
+      onToggleStatsPanel,
+      onToggleThemePanel,
+      onToggleTopbar,
+      statsPanelOpen,
+      themePanelOpen,
+    ]
+  );
 
-  const quickActions = [
-    {
-      id: "fullscreen",
-      icon: isFullscreen ? Minimize2 : Maximize2,
-      label: isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen",
-      onClick: onToggleFullscreen,
-      background: "rgb(var(--color-info))",
-    },
-    {
-      id: "topbar",
-      icon: LayoutGrid,
-      label: isTopBarVisible ? "Hide Top Bar" : "Show Top Bar",
-      onClick: onToggleTopBar,
-      background: "rgb(var(--color-warning))",
-    },
-    {
-      id: "edit",
-      icon: Edit3,
-      label: isEditMode ? "Disable Edit Mode" : "Enable Edit Mode",
-      onClick: onToggleEditMode,
-      background: "rgb(var(--color-success))",
-    },
-    {
-      id: "stats",
-      icon: BarChart3,
-      label: "Stats",
-      onClick: onShowStats,
-      background: "rgb(var(--color-primary))",
-    },
-  ];
+  useLayoutEffect(() => {
+    const node = quickActionsRef.current;
+    if (!node) {
+      registerAnchor("quick-actions-anchor", null);
+      return;
+    }
+
+    const updateRect = () => {
+      const rect = node.getBoundingClientRect();
+      registerAnchor("quick-actions-anchor", {
+        x: rect.left,
+        y: rect.top,
+        width: rect.width,
+        height: rect.height,
+      });
+    };
+
+    updateRect();
+
+    const observer = new ResizeObserver(updateRect);
+    observer.observe(node);
+    window.addEventListener("scroll", updateRect, true);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("scroll", updateRect, true);
+      registerAnchor("quick-actions-anchor", null);
+    };
+  }, [collapsed, quickActionsExpanded, registerAnchor]);
 
   return (
     <div
@@ -108,10 +200,10 @@ export function Sidebar({
           borderColor: "rgb(var(--color-border))",
           paddingLeft: "24px",
           paddingRight: "24px",
-          justifyContent: isCollapsed ? "center" : "flex-start",
+          justifyContent: collapsed ? "center" : "flex-start",
         }}
       >
-        {!isCollapsed ? (
+        {!collapsed ? (
           <div className="flex items-center gap-3">
             <div
               className="flex items-center justify-center rounded-lg shrink-0"
@@ -174,7 +266,7 @@ export function Sidebar({
         )}
 
         {/* Collapse Toggle Button */}
-        {!isCollapsed ? (
+        {!collapsed ? (
           <button
             onClick={onToggleCollapse}
             className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-lg transition-all duration-200"
@@ -189,6 +281,7 @@ export function Sidebar({
             onMouseLeave={(e) => {
               e.currentTarget.style.backgroundColor = "transparent";
             }}
+            aria-label="Collapse sidebar"
           >
             <ChevronLeft size={18} />
           </button>
@@ -200,12 +293,12 @@ export function Sidebar({
         <ul className="space-y-1">
           {menuItems.map((item) => {
             const Icon = item.icon;
-            const isActive = activeTab === item.id;
+            const isActive = currentRoute === item.id;
 
             return (
               <li key={item.id}>
                 <button
-                  onClick={() => onTabChange(item.id)}
+                  onClick={() => onNavigate(item.id)}
                   className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative"
                   style={{
                     backgroundColor: isActive
@@ -282,14 +375,12 @@ export function Sidebar({
                       </svg>
                     </div>
                   ) : (
-                    <Icon size={18} className="shrink-0" />
+                    Icon && <Icon size={18} className="shrink-0" />
                   )}
-                  {!isCollapsed && (
-                    <span className="text-sm">{item.label}</span>
-                  )}
+                  {!collapsed && <span className="text-sm">{item.label}</span>}
 
                   {/* Tooltip for collapsed state */}
-                  {isCollapsed && (
+                  {collapsed && (
                     <div
                       className="absolute left-full ml-2 px-2 py-1 text-xs rounded opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-50"
                       style={tooltipStyles}
@@ -306,13 +397,15 @@ export function Sidebar({
 
       {/* Quick Actions Section */}
       <div
+        ref={quickActionsRef}
         className="p-3 border-t"
         style={{ borderColor: "rgb(var(--color-border))" }}
+        id="quick-actions-anchor"
       >
         <div className="relative">
           {/* Quick Actions Toggle Button */}
           <button
-            onClick={() => setQuickActionsExpanded(!quickActionsExpanded)}
+            onClick={() => setQuickActionsExpanded((prev) => !prev)}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 relative group"
             style={{
               color: "rgb(var(--color-text-secondary))",
@@ -343,7 +436,7 @@ export function Sidebar({
                 }}
               />
             </motion.div>
-            {!isCollapsed && (
+            {!collapsed && (
               <span
                 className="text-sm"
                 style={{
@@ -357,7 +450,7 @@ export function Sidebar({
             )}
 
             {/* Tooltip for collapsed state */}
-            {isCollapsed && (
+            {collapsed && (
               <div
                 className="absolute left-full ml-2 px-2 py-1 text-xs rounded opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-50"
                 style={tooltipStyles}
@@ -390,14 +483,18 @@ export function Sidebar({
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 relative group"
                     style={{
                       color: "rgb(var(--color-text-secondary))",
-                      backgroundColor: "transparent",
+                      backgroundColor: action.active
+                        ? "rgba(255, 255, 255, 0.08)"
+                        : "transparent",
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.backgroundColor =
                         "rgb(var(--color-bg-hover))";
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "transparent";
+                      e.currentTarget.style.backgroundColor = action.active
+                        ? "rgba(255, 255, 255, 0.08)"
+                        : "transparent";
                     }}
                   >
                     <div
@@ -409,12 +506,21 @@ export function Sidebar({
                     >
                       <Icon size={14} />
                     </div>
-                    {!isCollapsed && (
-                      <span className="text-sm">{action.label}</span>
+                    {!collapsed && (
+                      <div className="flex flex-col text-left">
+                        <span className="text-sm font-medium">
+                          {action.label}
+                        </span>
+                        {action.sublabel && (
+                          <span className="text-xs text-white/60">
+                            {action.sublabel}
+                          </span>
+                        )}
+                      </div>
                     )}
 
                     {/* Tooltip for collapsed state */}
-                    {isCollapsed && (
+                    {collapsed && (
                       <div
                         className="absolute left-full ml-2 px-2 py-1 text-xs rounded opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-50"
                         style={tooltipStyles}

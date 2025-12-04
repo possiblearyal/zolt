@@ -1,4 +1,3 @@
-import svgPaths from "../imports/svg-paths";
 import {
   Select,
   SelectContent,
@@ -9,16 +8,11 @@ import {
 
 interface TopBarProps {
   sidebarCollapsed: boolean;
-  onThemeToggle: () => void;
   selectedSet: string;
   onSetChange: (set: string) => void;
 }
 
-export function TopBar({
-  onThemeToggle,
-  selectedSet,
-  onSetChange,
-}: TopBarProps) {
+export function TopBar({ selectedSet, onSetChange }: TopBarProps) {
   const questionSets = [
     "Science Questions Set - 1",
     "History Questions Set - 1",
@@ -42,10 +36,23 @@ export function TopBar({
             <SelectTrigger
               className="min-w-[250px] justify-between border"
               data-size="default"
+              style={{
+                backgroundColor: "rgb(var(--color-bg-primary))",
+                borderColor: "rgb(var(--color-border))",
+                color: "rgb(var(--color-text-primary))",
+              }}
             >
               <SelectValue placeholder="Select question set" />
             </SelectTrigger>
-            <SelectContent align="start">
+            <SelectContent
+              align="start"
+              className="border"
+              style={{
+                backgroundColor: "rgb(var(--color-bg-primary))",
+                borderColor: "rgb(var(--color-border))",
+                color: "rgb(var(--color-text-primary))",
+              }}
+            >
               {questionSets.map((set) => (
                 <SelectItem key={set} value={set}>
                   {set}
@@ -65,38 +72,6 @@ export function TopBar({
               – Everest School
             </span>
           </div>
-
-          {/* Theme Toggle */}
-          <button
-            onClick={onThemeToggle}
-            className="p-2 rounded-lg transition-all"
-            title="Toggle Theme"
-            style={{
-              backgroundColor: "transparent",
-              color: "rgb(var(--color-text-secondary))",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor =
-                "rgb(var(--color-bg-hover))";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "transparent";
-            }}
-          >
-            <div className="w-5 h-5">
-              <svg
-                className="block size-full"
-                fill="none"
-                preserveAspectRatio="none"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  d={svgPaths.p364a9100}
-                  fill="rgb(var(--color-text-primary))"
-                />
-              </svg>
-            </div>
-          </button>
 
           {/* User Avatar */}
           <div

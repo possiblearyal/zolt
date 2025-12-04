@@ -1,7 +1,8 @@
 import { X, Check, Search } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useMemo, useState } from "react";
-import { THEMES, type ThemeId, type ThemeDefinition } from "../styles/themes";
+import { THEMES, type ThemeId, type ThemeDefinition } from "../theme/themes";
+import { Popover, PopoverAnchor, PopoverContent } from "./ui/popover";
 
 interface ThemeModalProps {
   isOpen: boolean;
@@ -44,56 +45,130 @@ export function ThemeModal({ isOpen, onClose, onThemeApply }: ThemeModalProps) {
   };
 
   return (
-    <AnimatePresence>
+    <Popover open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <PopoverAnchor asChild>
+        <div
+          className="fixed right-8 top-[calc(var(--topbar-height)+16px)] h-0 w-0"
+          aria-hidden="true"
+        />
+      </PopoverAnchor>
       {isOpen && (
-        <>
-          <motion.button
-            type="button"
-            aria-label="Close theme popover"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="fixed inset-0 z-40 cursor-default"
-            style={{ backgroundColor: "transparent", border: "none" }}
-          />
-
+        <PopoverContent
+          side="left"
+          align="end"
+          sideOffset={24}
+          className="w-[460px] max-w-[min(460px,calc(100vw-32px))] border-none bg-transparent p-0 shadow-none"
+        >
           <motion.div
             initial={{ opacity: 0, y: -8, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.98 }}
             transition={{ type: "spring", stiffness: 260, damping: 20 }}
-            className="fixed right-8 top-[calc(var(--topbar-height)+16px)] z-50 w-full max-w-xl"
+            className="max-h-[80vh] overflow-hidden rounded-2xl border shadow-2xl flex flex-col"
+            style={{
+              backgroundColor: "rgb(var(--color-bg-primary))",
+              borderColor: "rgb(var(--color-border))",
+            }}
           >
             <div
-              className="rounded-2xl border shadow-2xl overflow-hidden flex flex-col max-h-[80vh]"
-              style={{
-                backgroundColor: "rgb(var(--color-bg-primary))",
-                borderColor: "rgb(var(--color-border))",
-              }}
+              className="flex items-center justify-between px-5 py-4 border-b"
+              style={{ borderColor: "rgb(var(--color-border))" }}
+            >
+              <div>
+                <h2
+                  className="text-base font-semibold"
+                  style={{ color: "rgb(var(--color-text-primary))" }}
+                >
+                  Theme Library
+                </h2>
+                <p
+                  className="text-sm"
+                  style={{ color: "rgb(var(--color-text-secondary))" }}
+                >
+                  Browse, search, and apply curated themes.
+                </p>
+              </div>
+              <button
+                onClick={onClose}
+                className="p-2 rounded-lg transition-colors"
+                style={{ backgroundColor: "transparent" }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor =
+                    "rgb(var(--color-bg-hover))";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "transparent";
+                }}
+              >
+                <X
+                  size={18}
+                  style={{ color: "rgb(var(--color-text-secondary))" }}
+                />
+              </button>
+            </div>
+
+            <div
+              className="px-5 py-4 border-b"
+              style={{ borderColor: "rgb(var(--color-border))" }}
+            >
+              <div className="relative">
+                <Search
+                  size={16}
+                  className="absolute left-3 top-1/2 -translate-y-1/2"
+                  style={{ color: "rgb(var(--color-text-tertiary))" }}
+                />
+                <input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search themes by name..."
+                  className="w-full rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2"
+                  style={{
+                    backgroundColor: "rgb(var(--color-bg-secondary))",
+                    color: "rgb(var(--color-text-primary))",
+                    border: `1px solid rgb(var(--color-border))`,
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6">
+              <ThemeSection
+                title="Light Themes"
+                themes={filteredLightThemes}
+                selectedTheme={selectedTheme}
+                onSelect={setSelectedTheme}
+                emptyLabel="No light themes found."
+              />
+              <ThemeSection
+                title="Dark Themes"
+                themes={filteredDarkThemes}
+                selectedTheme={selectedTheme}
+                onSelect={setSelectedTheme}
+                emptyLabel="No dark themes found."
+              />
+            </div>
+
+            <div
+              className="flex items-center justify-between gap-3 px-5 py-4 border-t"
+              style={{ borderColor: "rgb(var(--color-border))" }}
             >
               <div
-                className="flex items-center justify-between px-5 py-4 border-b"
-                style={{ borderColor: "rgb(var(--color-border))" }}
+                className="text-xs"
+                style={{ color: "rgb(var(--color-text-secondary))" }}
               >
-                <div>
-                  <h2
-                    className="text-base font-semibold"
-                    style={{ color: "rgb(var(--color-text-primary))" }}
-                  >
-                    Theme Library
-                  </h2>
-                  <p
-                    className="text-sm"
-                    style={{ color: "rgb(var(--color-text-secondary))" }}
-                  >
-                    Browse, search, and apply curated themes.
-                  </p>
-                </div>
+                {selectedTheme
+                  ? `Selected: ${THEMES[selectedTheme].name}`
+                  : "Choose a theme"}
+              </div>
+              <div className="flex gap-2">
                 <button
                   onClick={onClose}
-                  className="p-2 rounded-lg transition-colors"
-                  style={{ backgroundColor: "transparent" }}
+                  className="px-4 py-2 rounded-lg border text-sm transition-colors"
+                  style={{
+                    borderColor: "rgb(var(--color-border))",
+                    backgroundColor: "transparent",
+                    color: "rgb(var(--color-text-secondary))",
+                  }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.backgroundColor =
                       "rgb(var(--color-bg-hover))";
@@ -102,103 +177,24 @@ export function ThemeModal({ isOpen, onClose, onThemeApply }: ThemeModalProps) {
                     e.currentTarget.style.backgroundColor = "transparent";
                   }}
                 >
-                  <X
-                    size={18}
-                    style={{ color: "rgb(var(--color-text-secondary))" }}
-                  />
+                  Cancel
                 </button>
-              </div>
-
-              <div
-                className="px-5 py-4 border-b"
-                style={{ borderColor: "rgb(var(--color-border))" }}
-              >
-                <div className="relative">
-                  <Search
-                    size={16}
-                    className="absolute left-3 top-1/2 -translate-y-1/2"
-                    style={{ color: "rgb(var(--color-text-tertiary))" }}
-                  />
-                  <input
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search themes by name..."
-                    className="w-full rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2"
-                    style={{
-                      backgroundColor: "rgb(var(--color-bg-secondary))",
-                      color: "rgb(var(--color-text-primary))",
-                      border: `1px solid rgb(var(--color-border))`,
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6">
-                <ThemeSection
-                  title="Light Themes"
-                  themes={filteredLightThemes}
-                  selectedTheme={selectedTheme}
-                  onSelect={setSelectedTheme}
-                  emptyLabel="No light themes found."
-                />
-                <ThemeSection
-                  title="Dark Themes"
-                  themes={filteredDarkThemes}
-                  selectedTheme={selectedTheme}
-                  onSelect={setSelectedTheme}
-                  emptyLabel="No dark themes found."
-                />
-              </div>
-
-              <div
-                className="flex items-center justify-between gap-3 px-5 py-4 border-t"
-                style={{ borderColor: "rgb(var(--color-border))" }}
-              >
-                <div
-                  className="text-xs"
-                  style={{ color: "rgb(var(--color-text-secondary))" }}
+                <button
+                  onClick={handleApply}
+                  className="px-4 py-2 rounded-lg text-sm transition-colors"
+                  style={{
+                    backgroundColor: "rgb(var(--color-primary))",
+                    color: "rgb(var(--color-primary-foreground, 255 255 255))",
+                  }}
                 >
-                  {selectedTheme
-                    ? `Selected: ${THEMES[selectedTheme].name}`
-                    : "Choose a theme"}
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={onClose}
-                    className="px-4 py-2 rounded-lg border text-sm transition-colors"
-                    style={{
-                      borderColor: "rgb(var(--color-border))",
-                      backgroundColor: "transparent",
-                      color: "rgb(var(--color-text-secondary))",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor =
-                        "rgb(var(--color-bg-hover))";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "transparent";
-                    }}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleApply}
-                    className="px-4 py-2 rounded-lg text-sm transition-colors"
-                    style={{
-                      backgroundColor: "rgb(var(--color-primary))",
-                      color:
-                        "rgb(var(--color-primary-foreground, 255 255 255))",
-                    }}
-                  >
-                    Apply Theme
-                  </button>
-                </div>
+                  Apply Theme
+                </button>
               </div>
             </div>
           </motion.div>
-        </>
+        </PopoverContent>
       )}
-    </AnimatePresence>
+    </Popover>
   );
 }
 

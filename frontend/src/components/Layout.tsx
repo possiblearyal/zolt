@@ -13,7 +13,7 @@ import {
   type ThemeId,
   LIGHT_THEME_BASE,
   DARK_THEME_BASE,
-} from "../styles/themes";
+} from "../theme/themes";
 import {
   ResizablePanelGroup,
   ResizablePanel,

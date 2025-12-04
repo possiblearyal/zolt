@@ -86,7 +86,7 @@ export function RoundCard({
           <button
             {...attributes}
             {...listeners}
-            className="cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
+            className="cursor-grab active:cursor-grabbing transition-opacity"
             style={{ color: "rgb(var(--color-text-tertiary))" }}
           >
             <GripVertical size={20} />

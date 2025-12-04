@@ -1,5 +1,6 @@
 import { X, TrendingUp, Users, FileQuestion, Clock } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
+import { Popover, PopoverAnchor, PopoverContent } from "./ui/popover";
 
 interface StatsModalProps {
   isOpen: boolean;
@@ -35,34 +36,49 @@ export function StatsModal({ isOpen, onClose }: StatsModalProps) {
   ];
 
   return (
-    <AnimatePresence>
+    <Popover open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <PopoverAnchor asChild>
+        <div
+          className="fixed right-8 top-[calc(var(--topbar-height)+16px)] h-0 w-0"
+          aria-hidden="true"
+        />
+      </PopoverAnchor>
       {isOpen && (
-        <>
-          {/* Backdrop */}
+        <PopoverContent
+          side="left"
+          align="end"
+          sideOffset={24}
+          className="w-[460px] max-w-[min(460px,calc(100vw-32px))] border-none bg-transparent p-0 shadow-none"
+        >
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="fixed inset-0 bg-black/50 z-50"
-          />
-
-          {/* Modal */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-2xl shadow-2xl z-50 w-full max-w-2xl"
-            style={{ backgroundColor: "rgb(var(--color-bg-primary))" }}
+            initial={{ opacity: 0, y: -8, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.98 }}
+            transition={{ type: "spring", stiffness: 260, damping: 20 }}
+            className="max-h-[80vh] overflow-hidden rounded-2xl border shadow-2xl flex flex-col"
+            style={{
+              backgroundColor: "rgb(var(--color-bg-primary))",
+              borderColor: "rgb(var(--color-border))",
+            }}
           >
-            {/* Header */}
             <div
-              className="flex items-center justify-between p-6 border-b"
+              className="flex items-center justify-between px-5 py-4 border-b"
               style={{ borderColor: "rgb(var(--color-border))" }}
             >
-              <h2 style={{ color: "rgb(var(--color-text-primary))" }}>
-                Quiz Statistics
-              </h2>
+              <div>
+                <h2
+                  className="text-base font-semibold"
+                  style={{ color: "rgb(var(--color-text-primary))" }}
+                >
+                  Quiz Statistics
+                </h2>
+                <p
+                  className="text-sm"
+                  style={{ color: "rgb(var(--color-text-secondary))" }}
+                >
+                  Snapshot of the current competition.
+                </p>
+              </div>
               <button
                 onClick={onClose}
                 className="p-2 rounded-lg transition-colors"
@@ -76,24 +92,23 @@ export function StatsModal({ isOpen, onClose }: StatsModalProps) {
                 }}
               >
                 <X
-                  size={20}
+                  size={18}
                   style={{ color: "rgb(var(--color-text-secondary))" }}
                 />
               </button>
             </div>
 
-            {/* Content */}
-            <div className="p-6">
-              <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6">
+              <div className="grid grid-cols-2 gap-4">
                 {stats.map((stat, index) => {
                   const Icon = stat.icon;
                   return (
                     <motion.div
                       key={stat.label}
-                      initial={{ opacity: 0, y: 20 }}
+                      initial={{ opacity: 0, y: 16 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className="rounded-xl p-6"
+                      transition={{ delay: index * 0.05 }}
+                      className="rounded-xl p-5"
                       style={{ backgroundColor: "rgb(var(--color-card-bg))" }}
                     >
                       <div className="flex items-center gap-4">
@@ -104,19 +119,17 @@ export function StatsModal({ isOpen, onClose }: StatsModalProps) {
                             color: "rgb(var(--color-text-inverse))",
                           }}
                         >
-                          <Icon size={24} />
+                          <Icon size={20} />
                         </div>
                         <div>
                           <p
-                            className="text-sm"
-                            style={{
-                              color: "rgb(var(--color-text-secondary))",
-                            }}
+                            className="text-xs uppercase tracking-wide"
+                            style={{ color: "rgb(var(--color-text-tertiary))" }}
                           >
                             {stat.label}
                           </p>
                           <p
-                            className="text-2xl font-bold"
+                            className="text-2xl font-semibold"
                             style={{ color: "rgb(var(--color-text-primary))" }}
                           >
                             {stat.value}
@@ -128,10 +141,9 @@ export function StatsModal({ isOpen, onClose }: StatsModalProps) {
                 })}
               </div>
 
-              {/* Additional Info */}
               <div className="space-y-4">
                 <div
-                  className="border rounded-lg p-4"
+                  className="border rounded-xl p-4"
                   style={{
                     backgroundColor: "rgb(var(--color-bg-muted))",
                     borderColor: "rgb(var(--color-info))",
@@ -148,7 +160,7 @@ export function StatsModal({ isOpen, onClose }: StatsModalProps) {
                   </p>
                 </div>
                 <div
-                  className="border rounded-lg p-4"
+                  className="border rounded-xl p-4"
                   style={{
                     backgroundColor: "rgb(var(--color-bg-muted))",
                     borderColor: "rgb(var(--color-success))",
@@ -167,17 +179,17 @@ export function StatsModal({ isOpen, onClose }: StatsModalProps) {
               </div>
             </div>
 
-            {/* Footer */}
             <div
-              className="flex justify-end gap-3 p-6 border-t"
+              className="flex justify-end gap-3 px-5 py-4 border-t"
               style={{ borderColor: "rgb(var(--color-border))" }}
             >
               <button
                 onClick={onClose}
-                className="px-4 py-2 rounded-lg border transition-colors"
+                className="px-4 py-2 rounded-lg border text-sm transition-colors"
                 style={{
                   borderColor: "rgb(var(--color-border))",
                   backgroundColor: "transparent",
+                  color: "rgb(var(--color-text-secondary))",
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.backgroundColor =
@@ -191,8 +203,8 @@ export function StatsModal({ isOpen, onClose }: StatsModalProps) {
               </button>
             </div>
           </motion.div>
-        </>
+        </PopoverContent>
       )}
-    </AnimatePresence>
+    </Popover>
   );
 }

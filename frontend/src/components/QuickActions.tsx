@@ -4,6 +4,7 @@ import {
   LayoutGrid,
   Edit3,
   BarChart3,
+  Zap,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";

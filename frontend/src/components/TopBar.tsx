@@ -1,5 +1,11 @@
-import { ChevronDown } from "lucide-react";
-import svgPaths from "../imports/svg-2av1lo4v03";
+import svgPaths from "../imports/svg-paths";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
 
 interface TopBarProps {
   sidebarCollapsed: boolean;
@@ -32,37 +38,21 @@ export function TopBar({
       <div className="h-full flex items-center justify-between px-8">
         {/* Left Section - Dropdown */}
         <div className="flex items-center gap-4">
-          <div className="relative">
-            <select
-              value={selectedSet}
-              onChange={(e) => onSetChange(e.target.value)}
-              className="appearance-none border rounded-lg px-4 py-2.5 pr-10 cursor-pointer transition-all focus:outline-none focus:ring-2"
-              style={{
-                borderColor: "rgb(var(--color-border))",
-                color: "rgb(var(--color-text-primary))",
-                backgroundColor: "rgb(var(--color-bg-primary))",
-                minWidth: "250px",
-              }}
+          <Select value={selectedSet} onValueChange={onSetChange}>
+            <SelectTrigger
+              className="min-w-[250px] justify-between border"
+              data-size="default"
             >
+              <SelectValue placeholder="Select question set" />
+            </SelectTrigger>
+            <SelectContent align="start">
               {questionSets.map((set) => (
-                <option
-                  key={set}
-                  value={set}
-                  style={{
-                    backgroundColor: "rgb(var(--color-bg-primary))",
-                    color: "rgb(var(--color-text-primary))",
-                  }}
-                >
+                <SelectItem key={set} value={set}>
                   {set}
-                </option>
+                </SelectItem>
               ))}
-            </select>
-            <ChevronDown
-              size={16}
-              className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
-              style={{ color: "rgb(var(--color-text-secondary))" }}
-            />
-          </div>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Right Section - User Info */}

@@ -13,7 +13,7 @@ import {
   Edit3,
   BarChart3,
 } from "lucide-react";
-import svgPaths from "../imports/svg-2av1lo4v03";
+import svgPaths from "../imports/svg-paths";
 import { useState } from "react";
 import { motion } from "framer-motion";
 
@@ -44,7 +44,7 @@ export function Sidebar({
   isEditMode,
   onShowStats,
 }: SidebarProps) {
-  const [isHovered, setIsHovered] = useState(false);
+  const [logoHovered, setLogoHovered] = useState(false);
   const [quickActionsExpanded, setQuickActionsExpanded] = useState(false);
   const tooltipStyles = {
     backgroundColor: "rgb(var(--color-bg-elevated))",
@@ -99,8 +99,6 @@ export function Sidebar({
         borderColor: "rgb(var(--color-border))",
         backgroundColor: "rgb(var(--color-bg-primary))",
       }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
     >
       {/* Logo Section */}
       <div
@@ -113,7 +111,7 @@ export function Sidebar({
           justifyContent: isCollapsed ? "center" : "flex-start",
         }}
       >
-        {!isCollapsed && (
+        {!isCollapsed ? (
           <div className="flex items-center gap-3">
             <div
               className="flex items-center justify-center rounded-lg shrink-0"
@@ -134,6 +132,44 @@ export function Sidebar({
             <span style={{ color: "rgb(var(--color-text-primary))" }}>
               Zolt
             </span>
+          </div>
+        ) : (
+          <div
+            className="relative flex flex-1 items-center justify-center"
+            onMouseEnter={() => setLogoHovered(true)}
+            onMouseLeave={() => setLogoHovered(false)}
+          >
+            <div
+              className={`flex items-center justify-center rounded-lg transition-opacity duration-150 ${
+                logoHovered ? "opacity-0" : "opacity-100"
+              }`}
+              style={{
+                width: "32px",
+                height: "32px",
+                backgroundColor: "rgb(var(--color-primary))",
+              }}
+            >
+              <span
+                style={{
+                  color: "rgb(var(--color-primary-foreground, 255 255 255))",
+                }}
+              >
+                Z
+              </span>
+            </div>
+            <button
+              onClick={onToggleCollapse}
+              className={`absolute inset-0 flex items-center justify-center rounded-lg transition-opacity duration-150 ${
+                logoHovered ? "opacity-100" : "opacity-0 pointer-events-none"
+              }`}
+              style={{
+                color: "rgb(var(--color-text-secondary))",
+                backgroundColor: "transparent",
+              }}
+              aria-label="Expand sidebar"
+            >
+              <ChevronRight size={18} />
+            </button>
           </div>
         )}
 
@@ -156,26 +192,7 @@ export function Sidebar({
           >
             <ChevronLeft size={18} />
           </button>
-        ) : (
-          <button
-            onClick={onToggleCollapse}
-            className="p-2 rounded-lg transition-all duration-200"
-            style={{
-              color: "rgb(var(--color-text-secondary))",
-              opacity: isHovered ? 1 : 0.5,
-              backgroundColor: "transparent",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor =
-                "rgb(var(--color-bg-hover))";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "transparent";
-            }}
-          >
-            <ChevronRight size={18} />
-          </button>
-        )}
+        ) : null}
       </div>
 
       {/* Navigation Menu */}

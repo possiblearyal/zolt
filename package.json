@@ -1,0 +1,30 @@
+{
+  "name": "zolt",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "electron-forge start",
+    "build":"tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/possiblearyal/zolt.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/possiblearyal/zolt/issues"
+  },
+  "homepage": "https://github.com/possiblearyal/zolt#readme",
+  "devDependencies": {
+    "@electron-forge/cli": "^7.10.2",
+    "@types/electron": "^1.4.38",
+    "@types/node": "^24.10.2",
+    "electron": "^39.2.6",
+    "typescript": "^5.9.3"
+  }
+}

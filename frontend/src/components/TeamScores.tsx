@@ -45,7 +45,6 @@ export function TeamScores({ isExpanded, onToggle }: TeamScoresProps) {
         backgroundColor: "rgb(var(--color-bg-primary))",
       }}
     >
-      {/* Header */}
       <button
         onClick={onToggle}
         className="w-full px-6 py-3 flex items-center justify-between transition-colors border-b"
@@ -73,7 +72,6 @@ export function TeamScores({ isExpanded, onToggle }: TeamScoresProps) {
         </div>
       </button>
 
-      {/* Content */}
       <AnimatePresence>
         {isExpanded && (
           <motion.div
@@ -99,7 +97,6 @@ export function TeamScores({ isExpanded, onToggle }: TeamScoresProps) {
                     backgroundColor: "rgb(var(--color-card-bg))",
                   }}
                 >
-                  {/* Rank Badge */}
                   <div
                     className="absolute top-3 right-3 text-xs font-medium"
                     style={{ color: "rgb(var(--color-text-muted))" }}
@@ -107,7 +104,6 @@ export function TeamScores({ isExpanded, onToggle }: TeamScoresProps) {
                     #{team.rank}
                   </div>
 
-                  {/* Winner Badge */}
                   {team.isWinner && (
                     <div className="absolute top-3 left-3">
                       <Award
@@ -117,7 +113,6 @@ export function TeamScores({ isExpanded, onToggle }: TeamScoresProps) {
                     </div>
                   )}
 
-                  {/* Team Name */}
                   <div className="mt-2 mb-3">
                     <h4
                       className="font-medium truncate"
@@ -127,7 +122,6 @@ export function TeamScores({ isExpanded, onToggle }: TeamScoresProps) {
                     </h4>
                   </div>
 
-                  {/* Score Circle */}
                   <div className="flex items-center justify-center mb-2">
                     <div
                       className="relative flex items-center justify-center rounded-full border-4"
@@ -152,7 +146,6 @@ export function TeamScores({ isExpanded, onToggle }: TeamScoresProps) {
                     </div>
                   </div>
 
-                  {/* Trend Indicator */}
                   <div className="flex items-center justify-center gap-1 text-xs">
                     {team.trend === "up" && (
                       <>

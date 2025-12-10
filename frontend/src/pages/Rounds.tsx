@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Plus } from "lucide-react";
 import { RoundCard } from "../components/RoundCard";
 import { toast } from "sonner";
@@ -77,27 +77,28 @@ export function Rounds() {
     },
   ]);
 
-  // Round actions
-  const handleAddRound = () => {
-    const newRound: Round = {
-      id: Date.now().toString(),
-      title: `New Round ${rounds.length + 1}`,
-      type: "Multiple Choice",
-      typeColor: "#009966",
-      typeBg: "rgba(0, 188, 125, 0.1)",
-      questions: 10,
-      duration: 5,
-    };
-    setRounds([...rounds, newRound]);
+  const handleAddRound = useCallback(() => {
+    setRounds((prev) => {
+      const newRound: Round = {
+        id: Date.now().toString(),
+        title: `New Round ${prev.length + 1}`,
+        type: "Multiple Choice",
+        typeColor: "#009966",
+        typeBg: "rgba(0, 188, 125, 0.1)",
+        questions: 10,
+        duration: 5,
+      };
+      return [...prev, newRound];
+    });
     toast.success("Round added successfully!");
-  };
+  }, []);
 
   const handleEditRound = (id: string) => {
     toast.info(`Editing round ${id}`);
   };
 
   const handleDeleteRound = (id: string) => {
-    setRounds(rounds.filter((r) => r.id !== id));
+    setRounds((prev) => prev.filter((r) => r.id !== id));
     toast.success("Round deleted successfully!");
   };
 
@@ -109,7 +110,7 @@ export function Rounds() {
         id: Date.now().toString(),
         title: `${round.title} (Copy)`,
       };
-      setRounds([...rounds, newRound]);
+      setRounds((prev) => [...prev, newRound]);
       toast.success("Round duplicated successfully!");
     }
   };
@@ -137,7 +138,6 @@ export function Rounds() {
     setActiveId(null);
   };
 
-  // Keyboard shortcuts for rounds
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey) {
@@ -150,12 +150,10 @@ export function Rounds() {
 
     window.addEventListener("keydown", handleKeyPress);
     return () => window.removeEventListener("keydown", handleKeyPress);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [handleAddRound]);
 
   return (
     <>
-      {/* Page Header */}
       <div className="flex items-start justify-between mb-8">
         <div>
           <h1
@@ -183,7 +181,6 @@ export function Rounds() {
         </div>
       </div>
 
-      {/* Rounds List */}
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -248,7 +245,6 @@ export function Rounds() {
         </DragOverlay>
       </DndContext>
 
-      {/* Empty State */}
       {rounds.length === 0 && (
         <div className="text-center py-20">
           <p className="mb-4" style={{ color: "rgb(var(--color-text-muted))" }}>

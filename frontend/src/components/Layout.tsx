@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import * as React from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
@@ -33,7 +32,6 @@ const TAB_TO_PATH: Record<string, string> = {
 export function Layout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [teamPanelExpanded, setTeamPanelExpanded] = useState(false);
-  const [activeTab, setActiveTab] = useState("rounds");
   const [selectedSet, setSelectedSet] = useState("Science Questions Set - 1");
   const [statsPanelOpen, setStatsPanelOpen] = useState(false);
   const [themePanelOpen, setThemePanelOpen] = useState(false);
@@ -46,11 +44,9 @@ export function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Refs for resizable panels
-  const sidebarPanelRef = React.useRef<ImperativePanelHandle>(null);
-  const bottomPanelRef = React.useRef<ImperativePanelHandle>(null);
+  const sidebarPanelRef = useRef<ImperativePanelHandle>(null);
+  const bottomPanelRef = useRef<ImperativePanelHandle>(null);
 
-  // Apply theme
   const applyTheme = (themeId: ThemeId) => {
     const theme = THEMES[themeId];
     if (!theme) {
@@ -107,44 +103,42 @@ export function Layout() {
     toast.success("Exporting quiz data...");
   };
 
-  const handleSchedulePeek = () => {
-    toast.info("Schedule view coming soon");
-  };
-
-  // Handle sidebar toggle with proper collapse/expand
   const handleSidebarToggle = () => {
     if (sidebarPanelRef.current) {
       if (sidebarCollapsed || sidebarSize <= 5) {
-        // Expand to default size
         sidebarPanelRef.current.resize(15);
         setSidebarCollapsed(false);
       } else {
-        // Collapse to minimum
         sidebarPanelRef.current.resize(5);
         setSidebarCollapsed(true);
       }
     }
   };
 
-  // Handle team panel toggle with proper expand/collapse
   const handleTeamPanelToggle = () => {
     if (bottomPanelRef.current) {
       if (teamPanelExpanded) {
-        // Collapse to minimum (7%)
         bottomPanelRef.current.resize(7);
         setTeamPanelExpanded(false);
       } else {
-        // Expand to maximum (40%)
         bottomPanelRef.current.resize(40);
         setTeamPanelExpanded(true);
       }
     }
   };
 
+  const activeTab = useMemo(() => {
+    const segments = location.pathname.split("/").filter(Boolean);
+    const normalizedPath = segments.length === 0 ? "/" : `/${segments[0]}`;
+    return (
+      Object.entries(TAB_TO_PATH).find(
+        ([, path]) => path === normalizedPath
+      )?.[0] || "home"
+    );
+  }, [location.pathname]);
+
   const handleTabChange = (tab: string) => {
-    setActiveTab(tab);
-    const targetPath = TAB_TO_PATH[tab] ?? "/";
-    navigate(targetPath);
+    navigate(TAB_TO_PATH[tab] ?? "/");
   };
 
   const handleFullscreenToggle = async () => {
@@ -181,7 +175,6 @@ export function Layout() {
     });
   };
 
-  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey) {
@@ -225,16 +218,6 @@ export function Layout() {
     }
   }, [isEditMode]);
 
-  useEffect(() => {
-    const segments = location.pathname.split("/").filter(Boolean);
-    const normalizedPath = segments.length === 0 ? "/" : `/${segments[0]}`;
-    const matchedTab =
-      Object.entries(TAB_TO_PATH).find(
-        ([, path]) => path === normalizedPath
-      )?.[0] || "home";
-    setActiveTab((prev) => (prev === matchedTab ? prev : matchedTab));
-  }, [location.pathname]);
-
   return (
     <InterfaceStateProvider
       currentTheme={currentTheme}
@@ -245,9 +228,7 @@ export function Layout() {
       <div className="h-screen overflow-hidden">
         <Toaster position="top-right" richColors />
 
-        {/* Main Layout with Resizable Panels */}
         <ResizablePanelGroup direction="horizontal">
-          {/* Sidebar Panel */}
           <ResizablePanel
             ref={sidebarPanelRef}
             defaultSize={sidebarCollapsed ? 5 : 15}
@@ -268,7 +249,6 @@ export function Layout() {
               onToggleCollapse={handleSidebarToggle}
               currentRoute={activeTab}
               onNavigate={handleTabChange}
-              onOpenSchedule={handleSchedulePeek}
               onToggleFullscreen={handleFullscreenToggle}
               isFullscreen={isFullscreen}
               onToggleTopbar={handleTopBarToggle}
@@ -290,22 +270,17 @@ export function Layout() {
 
           <ResizableHandle withHandle />
 
-          {/* Main Content Panel */}
           <ResizablePanel defaultSize={60}>
             <ResizablePanelGroup direction="vertical">
-              {/* Top Bar and Main Content */}
               <ResizablePanel defaultSize={teamPanelExpanded ? 60 : 93}>
                 <div className="h-full flex flex-col">
-                  {/* Top Bar */}
                   {isTopBarVisible && (
                     <TopBar
-                      sidebarCollapsed={sidebarCollapsed}
                       selectedSet={selectedSet}
                       onSetChange={setSelectedSet}
                     />
                   )}
 
-                  {/* Main Content - Outlet for routes */}
                   <main
                     className="flex-1 overflow-auto"
                     style={{
@@ -318,10 +293,8 @@ export function Layout() {
                 </div>
               </ResizablePanel>
 
-              {/* Always show ResizableHandle */}
               <ResizableHandle withHandle />
 
-              {/* Team Scores Panel - Always present */}
               <ResizablePanel
                 ref={bottomPanelRef}
                 defaultSize={teamPanelExpanded ? 40 : 7}
@@ -337,7 +310,6 @@ export function Layout() {
           </ResizablePanel>
         </ResizablePanelGroup>
 
-        {/* Panels */}
         <StatsModal
           isOpen={statsPanelOpen}
           onClose={() => setStatsPanelOpen(false)}

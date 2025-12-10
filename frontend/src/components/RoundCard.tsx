@@ -59,7 +59,6 @@ export function RoundCard({
 
   return (
     <div className="relative">
-      {/* Drop indicator line */}
       {isOver && (
         <div
           className="absolute left-0 right-0 h-0.5 -top-2 rounded-full"
@@ -82,7 +81,6 @@ export function RoundCard({
         className="rounded-2xl border p-6 transition-all duration-200 group cursor-pointer"
       >
         <div className="flex items-center gap-4">
-          {/* Drag Handle */}
           <button
             {...attributes}
             {...listeners}
@@ -92,7 +90,6 @@ export function RoundCard({
             <GripVertical size={20} />
           </button>
 
-          {/* Main Content */}
           <div className="flex-1 min-w-0">
             <h3
               className="mb-2"
@@ -101,7 +98,6 @@ export function RoundCard({
               {round.title}
             </h3>
             <div className="flex items-center gap-3 flex-wrap">
-              {/* Type Badge */}
               <span
                 className="px-3 py-1 rounded-lg text-sm"
                 style={{
@@ -112,7 +108,6 @@ export function RoundCard({
                 {round.type}
               </span>
 
-              {/* Questions Count */}
               <span
                 className="flex items-center gap-1.5"
                 style={{ color: "rgb(var(--color-text-secondary))" }}
@@ -125,7 +120,6 @@ export function RoundCard({
                 •
               </span>
 
-              {/* Duration */}
               <span
                 className="flex items-center gap-1.5"
                 style={{ color: "rgb(var(--color-text-secondary))" }}
@@ -136,7 +130,6 @@ export function RoundCard({
             </div>
           </div>
 
-          {/* Action Buttons */}
           <motion.div
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: isHovered ? 1 : 0, x: isHovered ? 0 : -10 }}

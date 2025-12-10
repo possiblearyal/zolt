@@ -7,7 +7,6 @@ import {
 } from "./ui/select";
 
 interface TopBarProps {
-  sidebarCollapsed: boolean;
   selectedSet: string;
   onSetChange: (set: string) => void;
 }
@@ -30,7 +29,6 @@ export function TopBar({ selectedSet, onSetChange }: TopBarProps) {
       }}
     >
       <div className="h-full flex items-center justify-between px-8">
-        {/* Left Section - Dropdown */}
         <div className="flex items-center gap-4">
           <Select value={selectedSet} onValueChange={onSetChange}>
             <SelectTrigger
@@ -62,7 +60,6 @@ export function TopBar({ selectedSet, onSetChange }: TopBarProps) {
           </Select>
         </div>
 
-        {/* Right Section - User Info */}
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
             <span style={{ color: "rgb(var(--color-text-primary))" }}>
@@ -73,7 +70,6 @@ export function TopBar({ selectedSet, onSetChange }: TopBarProps) {
             </span>
           </div>
 
-          {/* User Avatar */}
           <div
             className="flex items-center justify-center rounded-full"
             style={{

@@ -31,7 +31,6 @@ interface SidebarProps {
   onToggleCollapse: () => void;
   currentRoute: string;
   onNavigate: (tab: string) => void;
-  onOpenSchedule: () => void;
   onToggleFullscreen: () => void;
   isFullscreen: boolean;
   onToggleTopbar: () => void;
@@ -74,7 +73,6 @@ export function Sidebar({
   onToggleCollapse,
   currentRoute,
   onNavigate,
-  onOpenSchedule,
   onToggleFullscreen,
   isFullscreen,
   onToggleTopbar,
@@ -143,7 +141,6 @@ export function Sidebar({
       isEditMode,
       isFullscreen,
       isTopbarVisible,
-      onOpenSchedule,
       onToggleEditMode,
       onToggleFullscreen,
       onToggleStatsPanel,
@@ -192,7 +189,6 @@ export function Sidebar({
         backgroundColor: "rgb(var(--color-bg-primary))",
       }}
     >
-      {/* Logo Section */}
       <div
         className="flex items-center border-b transition-all duration-300 relative"
         style={{
@@ -265,7 +261,6 @@ export function Sidebar({
           </div>
         )}
 
-        {/* Collapse Toggle Button */}
         {!collapsed ? (
           <button
             onClick={onToggleCollapse}
@@ -288,7 +283,6 @@ export function Sidebar({
         ) : null}
       </div>
 
-      {/* Navigation Menu */}
       <nav className="flex-1 px-3 py-6">
         <ul className="space-y-1">
           {menuItems.map((item) => {
@@ -379,7 +373,6 @@ export function Sidebar({
                   )}
                   {!collapsed && <span className="text-sm">{item.label}</span>}
 
-                  {/* Tooltip for collapsed state */}
                   {collapsed && (
                     <div
                       className="absolute left-full ml-2 px-2 py-1 text-xs rounded opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-50"
@@ -395,7 +388,6 @@ export function Sidebar({
         </ul>
       </nav>
 
-      {/* Quick Actions Section */}
       <div
         ref={quickActionsRef}
         className="p-3 border-t"
@@ -403,7 +395,6 @@ export function Sidebar({
         id="quick-actions-anchor"
       >
         <div className="relative">
-          {/* Quick Actions Toggle Button */}
           <button
             onClick={() => setQuickActionsExpanded((prev) => !prev)}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 relative group"
@@ -449,7 +440,6 @@ export function Sidebar({
               </span>
             )}
 
-            {/* Tooltip for collapsed state */}
             {collapsed && (
               <div
                 className="absolute left-full ml-2 px-2 py-1 text-xs rounded opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-50"
@@ -460,7 +450,6 @@ export function Sidebar({
             )}
           </button>
 
-          {/* Quick Actions Menu */}
           {quickActionsExpanded && (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
@@ -519,7 +508,6 @@ export function Sidebar({
                       </div>
                     )}
 
-                    {/* Tooltip for collapsed state */}
                     {collapsed && (
                       <div
                         className="absolute left-full ml-2 px-2 py-1 text-xs rounded opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-50"

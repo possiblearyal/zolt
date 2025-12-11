@@ -5,7 +5,6 @@ import {
   Edit3,
   HelpCircle,
   Home,
-  LayoutGrid,
   Layers,
   Maximize2,
   Minimize2,
@@ -33,8 +32,6 @@ interface SidebarProps {
   onNavigate: (tab: string) => void;
   onToggleFullscreen: () => void;
   isFullscreen: boolean;
-  onToggleTopbar: () => void;
-  isTopbarVisible: boolean;
   onToggleEditMode: () => void;
   isEditMode: boolean;
   onToggleStatsPanel: () => void;
@@ -75,8 +72,6 @@ export function Sidebar({
   onNavigate,
   onToggleFullscreen,
   isFullscreen,
-  onToggleTopbar,
-  isTopbarVisible,
   onToggleEditMode,
   isEditMode,
   onToggleStatsPanel,
@@ -119,15 +114,6 @@ export function Sidebar({
         active: isFullscreen,
       },
       {
-        id: "topbar",
-        icon: LayoutGrid,
-        label: isTopbarVisible ? "Hide Top Bar" : "Show Top Bar",
-        sublabel: "Toggle controls",
-        onClick: onToggleTopbar,
-        background: "rgb(var(--color-warning))",
-        active: !isTopbarVisible,
-      },
-      {
         id: "edit",
         icon: Edit3,
         label: isEditMode ? "Disable Edit Mode" : "Enable Edit Mode",
@@ -140,12 +126,10 @@ export function Sidebar({
     [
       isEditMode,
       isFullscreen,
-      isTopbarVisible,
       onToggleEditMode,
       onToggleFullscreen,
       onToggleStatsPanel,
       onToggleThemePanel,
-      onToggleTopbar,
       statsPanelOpen,
       themePanelOpen,
     ]
@@ -501,7 +485,12 @@ export function Sidebar({
                           {action.label}
                         </span>
                         {action.sublabel && (
-                          <span className="text-xs text-white/60" style={{color: "rgb(var(--color-text-secondary))"}}>
+                          <span
+                            className="text-xs text-white/60"
+                            style={{
+                              color: "rgb(var(--color-text-secondary))",
+                            }}
+                          >
                             {action.sublabel}
                           </span>
                         )}

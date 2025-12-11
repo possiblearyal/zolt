@@ -45,7 +45,14 @@ export function Layout() {
   const location = useLocation();
 
   const sidebarPanelRef = useRef<ImperativePanelHandle>(null);
+  const topBarPanelRef = useRef<ImperativePanelHandle>(null);
   const bottomPanelRef = useRef<ImperativePanelHandle>(null);
+  const topBarMaxPercent = useMemo(() => {
+    const viewportHeight =
+      typeof window !== "undefined" ? window.innerHeight : 0;
+    const percent = viewportHeight ? (64 / viewportHeight) * 100 : 8;
+    return Math.min(12, Math.max(6, percent));
+  }, []);
 
   const applyTheme = (themeId: ThemeId) => {
     const theme = THEMES[themeId];
@@ -159,14 +166,6 @@ export function Layout() {
     }
   };
 
-  const handleTopBarToggle = () => {
-    setIsTopBarVisible((prev) => {
-      const next = !prev;
-      toast.info(next ? "Top bar shown" : "Top bar hidden");
-      return next;
-    });
-  };
-
   const handleEditModeToggle = () => {
     setIsEditMode((prev) => {
       const next = !prev;
@@ -251,8 +250,6 @@ export function Layout() {
               onNavigate={handleTabChange}
               onToggleFullscreen={handleFullscreenToggle}
               isFullscreen={isFullscreen}
-              onToggleTopbar={handleTopBarToggle}
-              isTopbarVisible={isTopBarVisible}
               onToggleEditMode={handleEditModeToggle}
               isEditMode={isEditMode}
               onToggleStatsPanel={() => {
@@ -272,25 +269,46 @@ export function Layout() {
 
           <ResizablePanel defaultSize={60}>
             <ResizablePanelGroup direction="vertical">
-              <ResizablePanel defaultSize={teamPanelExpanded ? 60 : 93}>
-                <div className="h-full flex flex-col">
-                  {isTopBarVisible && (
-                    <TopBar
-                      selectedSet={selectedSet}
-                      onSetChange={setSelectedSet}
-                    />
-                  )}
+              <ResizablePanel
+                ref={topBarPanelRef}
+                defaultSize={
+                  isTopBarVisible ? Math.min(topBarMaxPercent, 10) : 0
+                }
+                minSize={0}
+                maxSize={topBarMaxPercent}
+                collapsible
+                onResize={(size) => {
+                  if (size > topBarMaxPercent && topBarPanelRef.current) {
+                    topBarPanelRef.current.resize(topBarMaxPercent);
+                    setIsTopBarVisible(true);
+                    return;
+                  }
+                  setIsTopBarVisible(size > 2);
+                }}
+              >
+                {isTopBarVisible && (
+                  <TopBar
+                    selectedSet={selectedSet}
+                    onSetChange={setSelectedSet}
+                  />
+                )}
+              </ResizablePanel>
 
-                  <main
-                    className="flex-1 overflow-auto"
-                    style={{
-                      padding: "40px",
-                      backgroundColor: "rgb(var(--color-bg-secondary))",
-                    }}
-                  >
-                    <Outlet />
-                  </main>
-                </div>
+              <ResizableHandle withHandle />
+
+              <ResizablePanel
+                defaultSize={teamPanelExpanded ? 80 : 83}
+                minSize={20}
+              >
+                <main
+                  className="flex-1 overflow-auto"
+                  style={{
+                    padding: "40px",
+                    backgroundColor: "rgb(var(--color-bg-secondary))",
+                  }}
+                >
+                  <Outlet />
+                </main>
               </ResizablePanel>
 
               <ResizableHandle withHandle />

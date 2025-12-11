@@ -199,8 +199,6 @@ export const ThemeModal = withMovablePanel<ThemeModalBaseProps>(
     panelId: "theme-panel",
     anchorId: "quick-actions-anchor",
     width: 460,
-    offset: { x: 50, y: 50 },
-    
   }
 );
 
@@ -300,10 +298,10 @@ function ThemeSection({
                   color: theme.cardForeground
                     ? `rgb(${theme.cardForeground})`
                     : theme.textPrimary
-                    ? `rgb(${theme.textPrimary})`
-                    : theme.foreground
-                    ? `rgb(${theme.foreground})`
-                    : "rgb(var(--color-text-primary))",
+                      ? `rgb(${theme.textPrimary})`
+                      : theme.foreground
+                        ? `rgb(${theme.foreground})`
+                        : "rgb(var(--color-text-primary))",
                 }}
               >
                 {theme.name}

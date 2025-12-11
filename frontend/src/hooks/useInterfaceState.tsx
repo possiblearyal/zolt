@@ -18,7 +18,7 @@ interface AnchorRect {
 interface PanelPosition {
   x: number;
   y: number;
-  mode?: "px" | "percent";
+  mode: "px" | "percent";
 }
 
 interface InterfaceStateValue {
@@ -88,7 +88,10 @@ export function InterfaceStateProvider({
   const setPanelPosition = useCallback(
     (id: string, position: PanelPosition) => {
       setPanelPositions((prev) => {
-        const next = { mode: "px", ...position };
+        const next: PanelPosition = {
+          ...position,
+          mode: position.mode ?? "px",
+        };
         const existing = prev[id];
         if (
           existing &&
@@ -105,13 +108,33 @@ export function InterfaceStateProvider({
   );
 
   const nudgePanel = useCallback((id: string, dx: number, dy: number) => {
-    setPanelPositions((prev) => {
+    setPanelPositions((prev): Record<string, PanelPosition> => {
       const current = prev[id];
       if (!current) return prev;
-      return {
-        ...prev,
-        [id]: { x: current.x + dx, y: current.y + dy, mode: "px" },
+      if (current.mode === "percent") {
+        const nextX = (current.x / 100) * window.innerWidth + dx;
+        const nextY = (current.y / 100) * window.innerHeight + dy;
+        const nextPosition: PanelPosition = {
+          x: nextX,
+          y: nextY,
+          mode: "px" as const,
+        };
+        const updated: Record<string, PanelPosition> = {
+          ...prev,
+          [id]: nextPosition,
+        };
+        return updated as Record<string, PanelPosition>;
+      }
+      const nextPosition: PanelPosition = {
+        x: current.x + dx,
+        y: current.y + dy,
+        mode: "px" as const,
       };
+      const updated: Record<string, PanelPosition> = {
+        ...prev,
+        [id]: nextPosition,
+      };
+      return updated as Record<string, PanelPosition>;
     });
   }, []);
 

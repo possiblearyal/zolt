@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import type {
   ComponentType,
   HTMLAttributes,
@@ -11,7 +11,6 @@ interface MovableOptions {
   panelId: string;
   anchorId: string;
   width?: number;
-  offset?: { x: number; y: number };
 }
 
 export interface MovablePanelInjectedProps {
@@ -20,40 +19,23 @@ export interface MovablePanelInjectedProps {
 
 export function withMovablePanel<P extends { isOpen: boolean }>(
   WrappedComponent: ComponentType<P & MovablePanelInjectedProps>,
-  { panelId, anchorId, width = 460, offset = { x: 32, y: -32 } }: MovableOptions
+  { panelId, anchorId: _anchorId, width = 460 }: MovableOptions
 ) {
   return function MovablePanelWrapper(props: P) {
     const { isOpen } = props;
-    const { getAnchor, getPanelPosition, setPanelPosition, nudgePanel } =
+    const { getPanelPosition, setPanelPosition, nudgePanel } =
       useInterfaceState();
-    const anchor = getAnchor(anchorId);
     const position = getPanelPosition(panelId);
+    const containerRef = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
       if (!isOpen || position) return;
-      if (anchor) {
-        setPanelPosition(panelId, {
-          x: anchor.x + anchor.width + offset.x,
-          y: Math.max(24, anchor.y + offset.y),
-          mode: "px",
-        });
-        return;
-      }
-
       setPanelPosition(panelId, {
         x: 50,
         y: 50,
         mode: "percent",
       });
-    }, [
-      anchor,
-      isOpen,
-      offset.x,
-      offset.y,
-      panelId,
-      position,
-      setPanelPosition,
-    ]);
+    }, [isOpen, panelId, position, setPanelPosition]);
 
     if (!isOpen || !position) {
       return null;
@@ -62,16 +44,27 @@ export function withMovablePanel<P extends { isOpen: boolean }>(
     const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
       event.preventDefault();
       event.stopPropagation();
+      const rect = containerRef.current?.getBoundingClientRect();
       const startX = event.clientX;
       const startY = event.clientY;
-      const startPos = { ...position };
+      const baseLeft = rect
+        ? rect.left
+        : position.mode === "percent"
+          ? (position.x / 100) * window.innerWidth
+          : position.x;
+      const baseTop = rect
+        ? rect.top
+        : position.mode === "percent"
+          ? (position.y / 100) * window.innerHeight
+          : position.y;
 
       const handleMove = (moveEvent: PointerEvent) => {
         const dx = moveEvent.clientX - startX;
         const dy = moveEvent.clientY - startY;
         setPanelPosition(panelId, {
-          x: startPos.x + dx,
-          y: Math.max(0, startPos.y + dy),
+          x: baseLeft + dx,
+          y: Math.max(0, baseTop + dy),
+          mode: "px",
         });
       };
 
@@ -117,6 +110,7 @@ export function withMovablePanel<P extends { isOpen: boolean }>(
 
     return (
       <div
+        ref={containerRef}
         style={{
           position: "fixed",
           left:

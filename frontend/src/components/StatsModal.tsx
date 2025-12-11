@@ -204,6 +204,5 @@ export const StatsModal = withMovablePanel<StatsModalBaseProps>(
     panelId: "stats-panel",
     anchorId: "quick-actions-anchor",
     width: 460,
-    offset: { x: 50, y: 50 },
   }
 );

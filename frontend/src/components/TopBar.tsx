@@ -32,7 +32,7 @@ export function TopBar({ selectedSet, onSetChange }: TopBarProps) {
         <div className="flex items-center gap-4">
           <Select value={selectedSet} onValueChange={onSetChange}>
             <SelectTrigger
-              className="min-w-[250px] justify-between border"
+              className="min-w-[250px] justify-between border hover:[rgb(var(--color-primary))]"
               data-size="default"
               style={{
                 backgroundColor: "rgb(var(--color-bg-primary))",
@@ -52,7 +52,11 @@ export function TopBar({ selectedSet, onSetChange }: TopBarProps) {
               }}
             >
               {questionSets.map((set) => (
-                <SelectItem key={set} value={set}>
+                <SelectItem
+                  className="hover:bg-[rgb(var(--color-card-hover))] cursor-pointer"
+                  key={set}
+                  value={set}
+                >
                   {set}
                 </SelectItem>
               ))}

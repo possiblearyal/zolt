@@ -30,14 +30,21 @@ export function withMovablePanel<P extends { isOpen: boolean }>(
     const position = getPanelPosition(panelId);
 
     useEffect(() => {
-      if (!isOpen) return;
-      if (position) return;
-      if (!anchor) return;
-      const next = {
-        x: anchor.x + anchor.width + offset.x,
-        y: Math.max(24, anchor.y + offset.y),
-      };
-      setPanelPosition(panelId, next);
+      if (!isOpen || position) return;
+      if (anchor) {
+        setPanelPosition(panelId, {
+          x: anchor.x + anchor.width + offset.x,
+          y: Math.max(24, anchor.y + offset.y),
+          mode: "px",
+        });
+        return;
+      }
+
+      setPanelPosition(panelId, {
+        x: 50,
+        y: 50,
+        mode: "percent",
+      });
     }, [
       anchor,
       isOpen,
@@ -105,14 +112,19 @@ export function withMovablePanel<P extends { isOpen: boolean }>(
       tabIndex: 0,
       role: "button",
       "aria-label": "Drag panel",
+      style: { cursor: "grab" },
     };
 
     return (
       <div
         style={{
           position: "fixed",
-          left: position.x,
-          top: position.y,
+          left:
+            position.mode === "percent" ? `${position.x}%` : `${position.x}px`,
+          top:
+            position.mode === "percent" ? `${position.y}%` : `${position.y}px`,
+          transform:
+            position.mode === "percent" ? "translate(-50%, -50%)" : undefined,
           width,
           zIndex: 60,
         }}

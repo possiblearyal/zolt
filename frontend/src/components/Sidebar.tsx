@@ -501,7 +501,7 @@ export function Sidebar({
                           {action.label}
                         </span>
                         {action.sublabel && (
-                          <span className="text-xs text-white/60">
+                          <span className="text-xs text-white/60" style={{color: "rgb(var(--color-text-secondary))"}}>
                             {action.sublabel}
                           </span>
                         )}

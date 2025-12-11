@@ -199,7 +199,8 @@ export const ThemeModal = withMovablePanel<ThemeModalBaseProps>(
     panelId: "theme-panel",
     anchorId: "quick-actions-anchor",
     width: 460,
-    offset: { x: 24, y: 16 },
+    offset: { x: 50, y: 50 },
+    
   }
 );
 

@@ -18,6 +18,7 @@ interface AnchorRect {
 interface PanelPosition {
   x: number;
   y: number;
+  mode?: "px" | "percent";
 }
 
 interface InterfaceStateValue {
@@ -87,15 +88,17 @@ export function InterfaceStateProvider({
   const setPanelPosition = useCallback(
     (id: string, position: PanelPosition) => {
       setPanelPositions((prev) => {
+        const next = { mode: "px", ...position };
         const existing = prev[id];
         if (
           existing &&
-          existing.x === position.x &&
-          existing.y === position.y
+          existing.x === next.x &&
+          existing.y === next.y &&
+          (existing.mode ?? "px") === (next.mode ?? "px")
         ) {
           return prev;
         }
-        return { ...prev, [id]: position };
+        return { ...prev, [id]: next };
       });
     },
     []
@@ -105,7 +108,10 @@ export function InterfaceStateProvider({
     setPanelPositions((prev) => {
       const current = prev[id];
       if (!current) return prev;
-      return { ...prev, [id]: { x: current.x + dx, y: current.y + dy } };
+      return {
+        ...prev,
+        [id]: { x: current.x + dx, y: current.y + dy, mode: "px" },
+      };
     });
   }, []);
 

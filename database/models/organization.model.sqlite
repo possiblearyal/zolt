@@ -1,0 +1,19 @@
+CREATE TABLE organizations (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  imageUrl TEXT,               -- Logo or banner
+  description TEXT,
+
+  -- Selected visual theme
+  selectedTheme TEXT,
+
+  -- Security: master PIN for admin actions
+  masterPin TEXT NOT NULL,
+
+  themeModal TEXT NOT NULL,    -- JSON: { "x": 50, "y": 50, "mode": "percent" }
+
+  statsModal TEXT NOT NULL,    -- JSON: { "x": 100, "y": 100, "mode": "pixel" }
+
+  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+);

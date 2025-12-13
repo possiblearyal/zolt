@@ -1,0 +1,18 @@
+CREATE TABLE rounds (
+  id TEXT PRIMARY KEY,
+  setId TEXT NOT NULL,
+  categoryId TEXT NOT NULL,
+
+  name TEXT NOT NULL,
+  description TEXT,
+  position INTEGER NOT NULL,
+
+  configuration JSON NOT NULL,
+
+  confirmationRequired BOOLEAN DEFAULT 0,
+
+  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+  FOREIGN KEY (setId) REFERENCES sets(id),
+  FOREIGN KEY (categoryId) REFERENCES round_categories(id)
+);

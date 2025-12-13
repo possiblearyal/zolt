@@ -1,0 +1,14 @@
+CREATE TABLE score_events (
+  id TEXT PRIMARY KEY,
+  matchTeamId TEXT NOT NULL,
+
+  roundId TEXT,
+  questionId TEXT,
+
+  delta INTEGER NOT NULL,
+  reason TEXT NOT NULL,
+
+  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+  FOREIGN KEY (matchTeamId) REFERENCES match_teams(id)
+);

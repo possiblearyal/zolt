@@ -1,0 +1,21 @@
+CREATE TABLE teams (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  logoUrl TEXT,
+
+  configuration JSON NOT NULL,
+
+  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+/* Example of configuration JSON:
+{
+  "maxPasses": 2,
+  "lifelines": {
+    "fiftyFifty": 1,
+    "doublePoints": 1,
+    "secondAttempt": 1
+  }
+}
+*/

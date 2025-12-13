@@ -1,0 +1,28 @@
+CREATE TABLE match_teams (
+  id TEXT PRIMARY KEY,
+  matchId TEXT NOT NULL,
+  teamId TEXT NOT NULL,
+
+  displayName TEXT NOT NULL,
+  score INTEGER DEFAULT 0,
+  standing INTEGER,
+  currentTurn BOOLEAN DEFAULT 0,
+
+  gameplayState JSON NOT NULL,
+
+  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+  FOREIGN KEY (matchId) REFERENCES matches(id),
+  FOREIGN KEY (teamId) REFERENCES teams(id)
+);
+
+/* Example of gameplayState JSON:
+{
+  "remainingPasses": 1,
+  "lifelines": {
+    "fiftyFifty": 1,
+    "doublePoints": 0,
+    "secondAttempt": 1
+  }
+}
+*/

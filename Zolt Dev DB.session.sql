@@ -1,8 +1,6 @@
 INSERT INTO round_categories (id, name, description, defaultConfiguration) VALUES
 
--- =====================================================
 -- 1. Multiple Choice Questions (MCQ)
--- =====================================================
 (
   'cat_mcq',
   'Multiple Choice',
@@ -23,9 +21,7 @@ INSERT INTO round_categories (id, name, description, defaultConfiguration) VALUE
   }'
 ),
 
--- =====================================================
 -- 2. True or False
--- =====================================================
 (
   'cat_true_false',
   'True or False',
@@ -43,9 +39,7 @@ INSERT INTO round_categories (id, name, description, defaultConfiguration) VALUE
   }'
 ),
 
--- =====================================================
 -- 3. Rapid Fire
--- =====================================================
 (
   'cat_rapid_fire',
   'Rapid Fire',
@@ -63,9 +57,7 @@ INSERT INTO round_categories (id, name, description, defaultConfiguration) VALUE
   }'
 ),
 
--- =====================================================
 -- 4. Visual Identification
--- =====================================================
 (
   'cat_visual_identification',
   'Visual Identification',
@@ -99,9 +91,7 @@ INSERT INTO round_categories (id, name, description, defaultConfiguration) VALUE
   }'
 ),
 
--- =====================================================
 -- 5. Audio Identification
--- =====================================================
 (
   'cat_audio_identification',
   'Audio Identification',
@@ -119,9 +109,7 @@ INSERT INTO round_categories (id, name, description, defaultConfiguration) VALUE
   }'
 ),
 
--- =====================================================
 -- 6. Buzzer Round
--- =====================================================
 (
   'cat_buzzer',
   'Buzzer',
@@ -139,9 +127,7 @@ INSERT INTO round_categories (id, name, description, defaultConfiguration) VALUE
   }'
 ),
 
--- =====================================================
 -- 7. Pass the Question
--- =====================================================
 (
   'cat_pass_question',
   'Pass the Question',

@@ -1,12 +1,9 @@
-CREATE TABLE matches (
+CREATE TABLE IF NOT EXISTS matches (
   id TEXT PRIMARY KEY,
   setId TEXT NOT NULL,
-
   status TEXT CHECK (status IN ('upcoming', 'live', 'completed')) NOT NULL,
   startedAt DATETIME,
   endedAt DATETIME,
-
   createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-
   FOREIGN KEY (setId) REFERENCES sets(id)
 );

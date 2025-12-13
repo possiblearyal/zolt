@@ -1,41 +1,34 @@
-CREATE TABLE questions (
+CREATE TABLE IF NOT EXISTS questions (
   id TEXT PRIMARY KEY,
   roundId TEXT NOT NULL,
-
   prompt JSON NOT NULL,
   answer JSON NOT NULL,
-
   hints JSON,
   overrides JSON,
-
   createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-
   FOREIGN KEY (roundId) REFERENCES rounds(id)
 );
-
 /* Example of prompt JSON structure:
-{
-  "type": "image",
-  "content": "Identify this monument",
-  "mediaUrl": "/media/q12.png"
-}
-*/
-
+ {
+ "type": "image",
+ "content": "Identify this monument",
+ "mediaUrl": "/media/q12.png"
+ }
+ */
 /* Example of answer JSON structure:
-{
-  "mode": "single",
-  "correctAnswer": "Taj Mahal",
-  "options": [
-    { "label": "A", "value": "Taj Mahal" },
-    { "label": "B", "value": "Qutub Minar" }
-  ]
-}
-*/
-
+ {
+ "mode": "single",
+ "correctAnswer": "Taj Mahal",
+ "options": [
+ { "label": "A", "value": "Taj Mahal" },
+ { "label": "B", "value": "Qutub Minar" }
+ ]
+ }
+ */
 /* Example of overrides JSON structure:
-{
-  "timePolicy": { "baseTime": 5 },
-  "scoringPolicy": { "correct": 20 }
-}
-
-*/
+ {
+ "timePolicy": { "baseTime": 5 },
+ "scoringPolicy": { "correct": 20 }
+ }
+ 
+ */

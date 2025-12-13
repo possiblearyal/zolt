@@ -2,11 +2,11 @@
   "name": "zolt",
   "version": "1.0.0",
   "description": "",
-  "main": "src/index.ts",
+  "main": "dist/src/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "electron-forge start",
-    "build":"tsc"
+    "dev": "npm run build && electron .",
+    "build": "tsc"
   },
   "repository": {
     "type": "git",
@@ -22,9 +22,13 @@
   "homepage": "https://github.com/possiblearyal/zolt#readme",
   "devDependencies": {
     "@electron-forge/cli": "^7.10.2",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/electron": "^1.4.38",
     "@types/node": "^24.10.2",
     "electron": "^39.2.6",
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.5.0"
   }
 }

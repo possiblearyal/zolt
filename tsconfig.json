@@ -4,8 +4,8 @@
     "module": "nodenext",
     "lib": ["ES2020", "DOM"],
     "sourceMap": true,
-    "outDir": "./src/dist",
-    "rootDir": "./src",
+    "outDir": "./dist",
+    "rootDir": ".",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -13,6 +13,6 @@
     "resolveJsonModule": true,
     "moduleResolution": "nodenext"
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "database/**/*"],
   "exclude": ["node_modules", "dist"]
 }

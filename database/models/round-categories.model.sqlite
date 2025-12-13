@@ -1,27 +1,24 @@
-CREATE TABLE round_categories (
+CREATE TABLE IF NOT EXISTS round_categories (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL UNIQUE,
   description TEXT,
-
   defaultConfiguration JSON NOT NULL,
-
   createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
   updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
 );
-
 /* Example of defaultConfiguration JSON:
-{
-  "passPolicy": { "enabled": false },
-  "timePolicy": { "baseTime": 10 },
-  "scoringPolicy": { "correct": 10, "incorrect": 0, "pass": 0 },
-  "hintPolicy": { "enabled": false },
-  "questionFormat": {
-    "promptType": "text",
-    "responseType": "choice"
-  },
-  "answerPolicy": { "mode": "single" },
-  "allowedLifelines": {
-    "fiftyFifty": 1
-  }
-}
-*/
+ {
+ "passPolicy": { "enabled": false },
+ "timePolicy": { "baseTime": 10 },
+ "scoringPolicy": { "correct": 10, "incorrect": 0, "pass": 0 },
+ "hintPolicy": { "enabled": false },
+ "questionFormat": {
+ "promptType": "text",
+ "responseType": "choice"
+ },
+ "answerPolicy": { "mode": "single" },
+ "allowedLifelines": {
+ "fiftyFifty": 1
+ }
+ }
+ */

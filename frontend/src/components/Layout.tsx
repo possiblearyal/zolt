@@ -300,15 +300,17 @@ export function Layout() {
                 defaultSize={teamPanelExpanded ? 80 : 83}
                 minSize={20}
               >
-                <main
-                  className="flex-1 overflow-auto"
-                  style={{
-                    padding: "40px",
-                    backgroundColor: "rgb(var(--color-bg-secondary))",
-                  }}
-                >
-                  <Outlet />
-                </main>
+                <div className="h-full overflow-hidden flex flex-col">
+                  <main
+                    className="flex-1 overflow-auto"
+                    style={{
+                      padding: "40px",
+                      backgroundColor: "rgb(var(--color-bg-secondary))",
+                    }}
+                  >
+                    <Outlet />
+                  </main>
+                </div>
               </ResizablePanel>
 
               <ResizableHandle withHandle />

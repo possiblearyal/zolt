@@ -30,6 +30,13 @@ export function TopBar({ selectedSet, onSetChange }: TopBarProps) {
     >
       <div className="h-full flex items-center justify-between px-8">
         <div className="flex items-center gap-4">
+          <img
+            src="/zolt.svg"
+            alt="Zolt logo"
+            width={28}
+            height={28}
+            style={{ objectFit: "contain" }}
+          />
           <Select value={selectedSet} onValueChange={onSetChange}>
             <SelectTrigger
               className="min-w-[250px] justify-between border hover:[rgb(var(--color-primary))]"
@@ -74,22 +81,17 @@ export function TopBar({ selectedSet, onSetChange }: TopBarProps) {
             </span>
           </div>
 
-          <div
-            className="flex items-center justify-center rounded-full"
+          <img
+            src="https://github.com/evilrabbit.png"
+            alt="Profile"
+            width={36}
+            height={36}
             style={{
-              width: "36px",
-              height: "36px",
-              backgroundColor: "rgb(var(--color-primary))",
+              borderRadius: "9999px",
+              objectFit: "cover",
+              border: "1px solid rgb(var(--color-border))",
             }}
-          >
-            <span
-              style={{
-                color: "rgb(var(--color-primary-foreground, 255 255 255))",
-              }}
-            >
-              A
-            </span>
-          </div>
+          />
         </div>
       </div>
     </div>

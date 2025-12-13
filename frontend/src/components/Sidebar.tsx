@@ -185,21 +185,14 @@ export function Sidebar({
       >
         {!collapsed ? (
           <div className="flex items-center gap-3">
-            <div
-              className="flex items-center justify-center rounded-lg shrink-0"
-              style={{
-                width: "32px",
-                height: "32px",
-                backgroundColor: "rgb(var(--color-primary))",
-              }}
-            >
-              <span
-                style={{
-                  color: "rgb(var(--color-primary-foreground, 255 255 255))",
-                }}
-              >
-                Z
-              </span>
+            <div className="flex items-center justify-center rounded-lg shrink-0">
+              <img
+                src="/zolt.svg"
+                alt="Zolt logo"
+                width={32}
+                height={32}
+                style={{ objectFit: "contain" }}
+              />
             </div>
             <span style={{ color: "rgb(var(--color-text-primary))" }}>
               Zolt
@@ -218,16 +211,15 @@ export function Sidebar({
               style={{
                 width: "32px",
                 height: "32px",
-                backgroundColor: "rgb(var(--color-primary))",
               }}
             >
-              <span
-                style={{
-                  color: "rgb(var(--color-primary-foreground, 255 255 255))",
-                }}
-              >
-                Z
-              </span>
+              <img
+                src="/zolt.svg"
+                alt="Zolt logo"
+                width={32}
+                height={32}
+                style={{ objectFit: "contain" }}
+              />
             </div>
             <button
               onClick={onToggleCollapse}

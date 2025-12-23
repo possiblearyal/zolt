@@ -1,0 +1,18 @@
+CREATE TABLE IF NOT EXISTS turn_orders (
+  id TEXT PRIMARY KEY,
+  roundId TEXT NOT NULL,
+  pattern TEXT CHECK (
+    pattern IN (
+      'forward',
+      'reverse',
+      'ping-pong',
+      'ping-pong-reverse'
+    )
+  ) NOT NULL,
+  cycles INTEGER DEFAULT 1 CHECK (cycles >= 1),
+  repeatPerTeam INTEGER DEFAULT 1 CHECK (repeatPerTeam >= 1),
+  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (roundId) REFERENCES rounds(id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_turn_orders_round ON turn_orders(roundId);

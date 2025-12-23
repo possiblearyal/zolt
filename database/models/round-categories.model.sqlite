@@ -2,6 +2,9 @@ CREATE TABLE IF NOT EXISTS round_categories (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL UNIQUE,
   description TEXT,
+  contentMode TEXT CHECK (
+    contentMode IN ('single-question', 'question-set')
+  ) NOT NULL DEFAULT 'single-question',
   defaultConfiguration JSON NOT NULL,
   createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
   updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -22,3 +25,4 @@ CREATE TABLE IF NOT EXISTS round_categories (
  }
  }
  */
+/* contentMode values: 'single-question' or 'question-set'; use to set what is played for rounds in this category */

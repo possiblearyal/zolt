@@ -25,6 +25,12 @@ CREATE TABLE IF NOT EXISTS questions (
  ]
  }
  */
+/* Example of hints JSON structure:
+ [
+ "Built by Shah Jahan",
+ "Located in Agra"
+ ]
+ */
 /* Example of overrides JSON structure:
  {
  "timePolicy": { "baseTime": 5 },

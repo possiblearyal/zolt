@@ -68,6 +68,7 @@ function createTables(db: Database.Database) {
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL UNIQUE,
       description TEXT,
+      contentMode TEXT CHECK (contentMode IN ('single-question', 'question-set')) NOT NULL DEFAULT 'single-question',
       defaultConfiguration JSON NOT NULL,
       createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
       updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -87,6 +88,19 @@ function createTables(db: Database.Database) {
       FOREIGN KEY (categoryId) REFERENCES round_categories(id)
     );
 
+    CREATE TABLE IF NOT EXISTS turn_orders (
+      id TEXT PRIMARY KEY,
+      roundId TEXT NOT NULL,
+      pattern TEXT CHECK (pattern IN ('forward', 'reverse', 'ping-pong', 'ping-pong-reverse')) NOT NULL,
+      cycles INTEGER DEFAULT 1 CHECK (cycles >= 1),
+      repeatPerTeam INTEGER DEFAULT 1 CHECK (repeatPerTeam >= 1),
+      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (roundId) REFERENCES rounds(id)
+    );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_turn_orders_round ON turn_orders(roundId);
+
     CREATE TABLE IF NOT EXISTS questions (
       id TEXT PRIMARY KEY,
       roundId TEXT NOT NULL,
@@ -97,6 +111,31 @@ function createTables(db: Database.Database) {
       createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (roundId) REFERENCES rounds(id)
     );
+
+    CREATE TABLE IF NOT EXISTS question_sets (
+      id TEXT PRIMARY KEY,
+      roundId TEXT NOT NULL,
+      name TEXT NOT NULL,
+      description TEXT,
+      orderStrategy TEXT CHECK (orderStrategy IN ('fixed', 'random')) NOT NULL DEFAULT 'fixed',
+      reusePolicy TEXT CHECK (reusePolicy IN ('single-use', 'allow-reuse')) NOT NULL DEFAULT 'single-use',
+      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (roundId) REFERENCES rounds(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS question_set_questions (
+      id TEXT PRIMARY KEY,
+      questionSetId TEXT NOT NULL,
+      questionId TEXT NOT NULL,
+      position INTEGER,
+      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (questionSetId) REFERENCES question_sets(id),
+      FOREIGN KEY (questionId) REFERENCES questions(id)
+    );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_question_set_questions_order ON question_set_questions(questionSetId, position);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_question_set_questions_question ON question_set_questions(questionSetId, questionId);
 
     CREATE TABLE IF NOT EXISTS matches (
       id TEXT PRIMARY KEY,
@@ -122,16 +161,48 @@ function createTables(db: Database.Database) {
       FOREIGN KEY (teamId) REFERENCES teams(id)
     );
 
+    CREATE TABLE IF NOT EXISTS turns (
+      id TEXT PRIMARY KEY,
+      matchId TEXT NOT NULL,
+      roundId TEXT NOT NULL,
+      matchTeamId TEXT NOT NULL,
+      turnOrderId TEXT,
+      questionSetId TEXT,
+      status TEXT CHECK (status IN ('pending', 'active', 'completed')) NOT NULL DEFAULT 'pending',
+      cycle INTEGER DEFAULT 1,
+      sequence INTEGER,
+      startsAt DATETIME,
+      endsAt DATETIME,
+      completedAt DATETIME,
+      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (matchId) REFERENCES matches(id),
+      FOREIGN KEY (roundId) REFERENCES rounds(id),
+      FOREIGN KEY (matchTeamId) REFERENCES match_teams(id),
+      FOREIGN KEY (turnOrderId) REFERENCES turn_orders(id),
+      FOREIGN KEY (questionSetId) REFERENCES question_sets(id)
+    );
+
     CREATE TABLE IF NOT EXISTS score_events (
       id TEXT PRIMARY KEY,
       matchTeamId TEXT NOT NULL,
       roundId TEXT,
       questionId TEXT,
+      turnId TEXT,
       delta INTEGER NOT NULL,
       reason TEXT NOT NULL,
+      answer JSON,
+      isCorrect BOOLEAN,
+      skipped BOOLEAN DEFAULT 0,
+      answeredAt DATETIME DEFAULT CURRENT_TIMESTAMP,
       createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (matchTeamId) REFERENCES match_teams(id)
+      FOREIGN KEY (matchTeamId) REFERENCES match_teams(id),
+      FOREIGN KEY (roundId) REFERENCES rounds(id),
+      FOREIGN KEY (questionId) REFERENCES questions(id),
+      FOREIGN KEY (turnId) REFERENCES turns(id)
     );
+
+    CREATE INDEX IF NOT EXISTS idx_score_events_turn ON score_events(turnId);
+    CREATE INDEX IF NOT EXISTS idx_score_events_question ON score_events(questionId);
 
     CREATE TABLE IF NOT EXISTS organizations (
       id TEXT PRIMARY KEY,
@@ -157,9 +228,13 @@ function applySchemasFromModelFiles(db: Database.Database): boolean {
     "teams.model.sqlite",
     "round-categories.model.sqlite",
     "rounds.model.sqlite",
+    "turn-orders.model.sqlite",
     "questions.model.sqlite",
+    "question-sets.model.sqlite",
+    "question-set-questions.model.sqlite",
     "matches.model.sqlite",
     "match-teams.model.sqlite",
+    "turns.model.sqlite",
     "score-events.model.sqlite",
     "organization.model.sqlite",
   ];

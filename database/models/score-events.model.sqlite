@@ -3,8 +3,20 @@ CREATE TABLE IF NOT EXISTS score_events (
   matchTeamId TEXT NOT NULL,
   roundId TEXT,
   questionId TEXT,
+  turnId TEXT,
   delta INTEGER NOT NULL,
   reason TEXT NOT NULL,
+  answer JSON,
+  isCorrect BOOLEAN,
+  skipped BOOLEAN DEFAULT 0,
+  answeredAt DATETIME DEFAULT CURRENT_TIMESTAMP,
   createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (matchTeamId) REFERENCES match_teams(id)
+  FOREIGN KEY (matchTeamId) REFERENCES match_teams(id),
+  FOREIGN KEY (roundId) REFERENCES rounds(id),
+  FOREIGN KEY (questionId) REFERENCES questions(id),
+  FOREIGN KEY (turnId) REFERENCES turns(id)
 );
+CREATE INDEX IF NOT EXISTS idx_score_events_turn ON score_events(turnId);
+CREATE INDEX IF NOT EXISTS idx_score_events_question ON score_events(questionId);
+
+/* answer JSON: what the team submitted; mirrors question answer shape */

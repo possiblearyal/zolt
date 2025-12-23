@@ -1,0 +1,11 @@
+CREATE TABLE IF NOT EXISTS question_sets (
+  id TEXT PRIMARY KEY,
+  roundId TEXT NOT NULL,
+  name TEXT NOT NULL,
+  description TEXT,
+  orderStrategy TEXT CHECK (orderStrategy IN ('fixed', 'random')) NOT NULL DEFAULT 'fixed',
+  reusePolicy TEXT CHECK (reusePolicy IN ('single-use', 'allow-reuse')) NOT NULL DEFAULT 'single-use',
+  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (roundId) REFERENCES rounds(id)
+);

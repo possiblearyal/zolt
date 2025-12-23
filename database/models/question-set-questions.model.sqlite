@@ -1,0 +1,11 @@
+CREATE TABLE IF NOT EXISTS question_set_questions (
+  id TEXT PRIMARY KEY,
+  questionSetId TEXT NOT NULL,
+  questionId TEXT NOT NULL,
+  position INTEGER,
+  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (questionSetId) REFERENCES question_sets(id),
+  FOREIGN KEY (questionId) REFERENCES questions(id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_question_set_questions_order ON question_set_questions(questionSetId, position);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_question_set_questions_question ON question_set_questions(questionSetId, questionId);

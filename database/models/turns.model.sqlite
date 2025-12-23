@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS turns (
+  id TEXT PRIMARY KEY,
+  matchId TEXT NOT NULL,
+  roundId TEXT NOT NULL,
+  matchTeamId TEXT NOT NULL,
+  turnOrderId TEXT,
+  questionSetId TEXT,
+  status TEXT CHECK (status IN ('pending', 'active', 'completed')) NOT NULL DEFAULT 'pending',
+  cycle INTEGER DEFAULT 1,
+  sequence INTEGER,
+  startsAt DATETIME,
+  endsAt DATETIME,
+  completedAt DATETIME,
+  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (matchId) REFERENCES matches(id),
+  FOREIGN KEY (roundId) REFERENCES rounds(id),
+  FOREIGN KEY (matchTeamId) REFERENCES match_teams(id),
+  FOREIGN KEY (turnOrderId) REFERENCES turn_orders(id),
+  FOREIGN KEY (questionSetId) REFERENCES question_sets(id)
+);

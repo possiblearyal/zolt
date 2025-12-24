@@ -1,9 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-/*---break--- */
 @custom-variant dark (&:is(.dark *));
-/*---break--- */
 /*! tailwindcss v4.1.3 | MIT License | https://tailwindcss.com */
 @layer properties {
   @supports (((-webkit-hyphens: none)) and (not (margin-trim: inline))) or
@@ -1462,7 +1460,6 @@ button {
   initial-value: 1;
 }
 
-/*---break--- */
 
 .dark {
   --sidebar: hsl(240 5.9% 10%);
@@ -1475,7 +1472,6 @@ button {
   --sidebar-ring: hsl(217.2 91.2% 59.8%);
 }
 
-/*---break--- */
 
 @theme inline {
   --color-sidebar: var(--sidebar);
@@ -1488,7 +1484,6 @@ button {
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
-/*---break--- */
 
 @layer base {
   * {

@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
 import { ButtonGroup } from "./ui/button-group";
 import {
@@ -15,6 +16,7 @@ interface TopBarProps {
 }
 
 export function TopBar({ selectedSet, onSetChange }: TopBarProps) {
+  const navigate = useNavigate();
   const questionSets = [
     "Science Questions Set - 1",
     "History Questions Set - 1",
@@ -78,10 +80,9 @@ export function TopBar({ selectedSet, onSetChange }: TopBarProps) {
               size="icon"
               aria-label="Add Set"
               className="cursor-pointer"
+              onClick={() => navigate("/new")}
             >
-              <a href="/new">
-                <Plus className="size-4 opacity-50" />
-              </a>
+              <Plus className="size-4 opacity-50" />
             </Button>
           </ButtonGroup>
         </div>

@@ -105,11 +105,16 @@ export function TeamScores({ isExpanded, onToggle }: TeamScoresProps) {
                   </div>
 
                   {team.isWinner && (
-                    <div className="absolute top-3 left-3">
-                      <Award
-                        size={16}
-                        style={{ color: "rgb(var(--color-warning))" }}
-                      />
+                    <div
+                      className="absolute -top-3 -left-3 flex items-center gap-1 px-2 py-1 rounded-full border shadow-sm"
+                      style={{
+                        backgroundColor: "rgb(var(--color-bg-elevated))",
+                        borderColor: "rgb(var(--color-warning))",
+                        color: "rgb(var(--color-warning))",
+                      }}
+                    >
+                      <Award size={14} />
+                      <span className="text-xs font-semibold">Winning</span>
                     </div>
                   )}
 

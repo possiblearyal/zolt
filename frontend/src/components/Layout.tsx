@@ -27,6 +27,7 @@ const TAB_TO_PATH: Record<string, string> = {
   questions: "/questions",
   teams: "/teams",
   settings: "/settings",
+  new: "/new",
 };
 
 export function Layout() {
@@ -230,6 +231,7 @@ export function Layout() {
         <ResizablePanelGroup direction="horizontal">
           <ResizablePanel
             ref={sidebarPanelRef}
+            className="overflow-hidden"
             defaultSize={sidebarCollapsed ? 5 : 15}
             minSize={5}
             maxSize={25}
@@ -320,6 +322,10 @@ export function Layout() {
                 defaultSize={teamPanelExpanded ? 40 : 7}
                 minSize={0}
                 maxSize={50}
+                onResize={(size) => {
+                  const expanded = size > 12;
+                  setTeamPanelExpanded(expanded);
+                }}
               >
                 <TeamScores
                   isExpanded={teamPanelExpanded}

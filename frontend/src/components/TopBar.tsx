@@ -13,9 +13,16 @@ import { Plus } from "lucide-react";
 interface TopBarProps {
   selectedSet: string;
   onSetChange: (set: string) => void;
+  orgName?: string;
+  orgLogo?: string;
 }
 
-export function TopBar({ selectedSet, onSetChange }: TopBarProps) {
+export function TopBar({
+  selectedSet,
+  onSetChange,
+  orgName,
+  orgLogo,
+}: TopBarProps) {
   const navigate = useNavigate();
   const questionSets = [
     "Science Questions Set - 1",
@@ -93,13 +100,13 @@ export function TopBar({ selectedSet, onSetChange }: TopBarProps) {
               Zolt
             </span>
             <span style={{ color: "rgb(var(--color-text-secondary))" }}>
-              – Everest School
+              – {orgName || "Your organization"}
             </span>
           </div>
 
           <img
-            src="https://github.com/evilrabbit.png"
-            alt="Profile"
+            src={orgLogo || "/zolt.svg"}
+            alt={orgName || "Organization"}
             width={36}
             height={36}
             style={{

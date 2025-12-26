@@ -27,14 +27,48 @@ export function withMovablePanel<P extends { isOpen: boolean }>(
       useInterfaceState();
     const position = getPanelPosition(panelId);
     const containerRef = useRef<HTMLDivElement | null>(null);
+    const rafRef = useRef<number | null>(null);
+    const saveTimeoutRef = useRef<number | null>(null);
+    const estimatedHeight = 300;
+
+    useEffect(() => {
+      return () => {
+        if (saveTimeoutRef.current) {
+          window.clearTimeout(saveTimeoutRef.current);
+          saveTimeoutRef.current = null;
+        }
+      };
+    }, []);
+
+    const schedulePersist = (
+      posPx: { x: number; y: number; mode: "px" },
+      viewportWidth: number,
+      viewportHeight: number
+    ) => {
+      if (saveTimeoutRef.current) {
+        window.clearTimeout(saveTimeoutRef.current);
+      }
+      const percentPos = pxToPercent(posPx, viewportWidth, viewportHeight);
+      saveTimeoutRef.current = window.setTimeout(() => {
+        saveTimeoutRef.current = null;
+        setPanelPosition(panelId, percentPos);
+        persistPanelPosition(panelId, percentPos);
+      }, 500);
+    };
 
     useEffect(() => {
       if (!isOpen || position) return;
-      setPanelPosition(panelId, {
-        x: 50,
-        y: 50,
-        mode: "percent",
-      });
+      const viewportWidth = window.innerWidth || 1;
+      const viewportHeight = window.innerHeight || 1;
+      const centerPx = {
+        x: Math.max(0, (viewportWidth - width) / 2),
+        y: Math.max(0, (viewportHeight - estimatedHeight) / 2),
+        mode: "px" as const,
+      };
+      setPanelPosition(
+        panelId,
+        pxToPercent(centerPx, viewportWidth, viewportHeight)
+      );
     }, [isOpen, panelId, position, setPanelPosition]);
 
     if (!isOpen || !position) {
@@ -44,33 +78,62 @@ export function withMovablePanel<P extends { isOpen: boolean }>(
     const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
       event.preventDefault();
       event.stopPropagation();
+      if (saveTimeoutRef.current) {
+        window.clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = null;
+      }
       const rect = containerRef.current?.getBoundingClientRect();
       const startX = event.clientX;
       const startY = event.clientY;
-      const baseLeft = rect
-        ? rect.left
-        : position.mode === "percent"
-          ? (position.x / 100) * window.innerWidth
-          : position.x;
-      const baseTop = rect
-        ? rect.top
-        : position.mode === "percent"
-          ? (position.y / 100) * window.innerHeight
-          : position.y;
+
+      const viewportWidth = window.innerWidth || 1;
+      const viewportHeight = window.innerHeight || 1;
+
+      const basePositionPx =
+        position.mode === "percent"
+          ? percentToPx(position, viewportWidth, viewportHeight)
+          : position;
+
+      if (position.mode === "percent") {
+        setPanelPosition(panelId, basePositionPx);
+      }
+
+      const baseLeft = rect ? rect.left : basePositionPx.x;
+      const baseTop = rect ? rect.top : basePositionPx.y;
 
       const handleMove = (moveEvent: PointerEvent) => {
-        const dx = moveEvent.clientX - startX;
-        const dy = moveEvent.clientY - startY;
-        setPanelPosition(panelId, {
-          x: baseLeft + dx,
-          y: Math.max(0, baseTop + dy),
-          mode: "px",
+        if (rafRef.current) return;
+        rafRef.current = window.requestAnimationFrame(() => {
+          rafRef.current = null;
+          const dx = moveEvent.clientX - startX;
+          const dy = moveEvent.clientY - startY;
+
+          const viewportWidth = window.innerWidth;
+          const viewportHeight = window.innerHeight;
+          const rect = containerRef.current?.getBoundingClientRect();
+          const panelWidth = rect?.width ?? width;
+          const panelHeight = rect?.height ?? estimatedHeight;
+
+          const nextX = clampPx(baseLeft + dx, viewportWidth, panelWidth);
+          const nextY = clampPx(baseTop + dy, viewportHeight, panelHeight);
+
+          const nextPosition = {
+            x: nextX,
+            y: nextY,
+            mode: "px" as const,
+          };
+          setPanelPosition(panelId, nextPosition);
+          schedulePersist(nextPosition, viewportWidth, viewportHeight);
         });
       };
 
       const handleUp = () => {
         window.removeEventListener("pointermove", handleMove);
         window.removeEventListener("pointerup", handleUp);
+        if (rafRef.current) {
+          window.cancelAnimationFrame(rafRef.current);
+          rafRef.current = null;
+        }
       };
 
       window.addEventListener("pointermove", handleMove);
@@ -117,8 +180,6 @@ export function withMovablePanel<P extends { isOpen: boolean }>(
             position.mode === "percent" ? `${position.x}%` : `${position.x}px`,
           top:
             position.mode === "percent" ? `${position.y}%` : `${position.y}px`,
-          transform:
-            position.mode === "percent" ? "translate(-50%, -50%)" : undefined,
           width,
           zIndex: 60,
         }}
@@ -128,3 +189,51 @@ export function withMovablePanel<P extends { isOpen: boolean }>(
     );
   };
 }
+
+const clampPercent = (value: number) => Math.min(100, Math.max(0, value));
+
+const clampPx = (value: number, viewport: number, panelSize: number) => {
+  const max = Math.max(0, viewport - panelSize);
+  return Math.min(Math.max(value, 0), max);
+};
+
+const pxToPercent = (
+  position: { x: number; y: number; mode: "px" },
+  viewportWidth: number,
+  viewportHeight: number
+) => {
+  return {
+    x: clampPercent((position.x / viewportWidth) * 100),
+    y: clampPercent((position.y / viewportHeight) * 100),
+    mode: "percent" as const,
+  };
+};
+
+const percentToPx = (
+  position: { x: number; y: number; mode: "percent" },
+  viewportWidth: number,
+  viewportHeight: number
+) => {
+  return {
+    x: (position.x / 100) * viewportWidth,
+    y: (position.y / 100) * viewportHeight,
+    mode: "px" as const,
+  };
+};
+
+const persistPanelPosition = (
+  panelId: string,
+  position: { x: number; y: number; mode: "percent" }
+) => {
+  const panel =
+    panelId === "theme-panel"
+      ? "theme"
+      : panelId === "stats-panel"
+        ? "stats"
+        : null;
+  if (!panel) return;
+  const payload = { panel, position } as const;
+  window.orgApi?.updatePanel?.(payload).catch((err) => {
+    console.warn("Failed to persist panel position", err);
+  });
+};

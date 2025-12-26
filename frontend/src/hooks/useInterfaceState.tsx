@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -38,6 +39,7 @@ interface InterfaceStateProviderProps {
   sidebarCollapsed: boolean;
   teamPanelExpanded: boolean;
   isTopBarVisible: boolean;
+  initialPanelPositions?: Record<string, PanelPosition>;
   children: ReactNode;
 }
 
@@ -49,11 +51,12 @@ export function InterfaceStateProvider({
   sidebarCollapsed,
   teamPanelExpanded,
   isTopBarVisible,
+  initialPanelPositions,
 }: InterfaceStateProviderProps) {
   const [anchors, setAnchors] = useState<Record<string, AnchorRect | null>>({});
   const [panelPositions, setPanelPositions] = useState<
     Record<string, PanelPosition>
-  >({});
+  >(() => initialPanelPositions ?? {});
 
   const registerAnchor = useCallback((id: string, rect: AnchorRect | null) => {
     setAnchors((prev) => {
@@ -137,6 +140,12 @@ export function InterfaceStateProvider({
       return updated as Record<string, PanelPosition>;
     });
   }, []);
+
+  // Merge in any initial positions provided after mount (e.g., from DB)
+  useEffect(() => {
+    if (!initialPanelPositions) return;
+    setPanelPositions((prev) => ({ ...initialPanelPositions, ...prev }));
+  }, [initialPanelPositions]);
 
   const value = useMemo<InterfaceStateValue>(
     () => ({

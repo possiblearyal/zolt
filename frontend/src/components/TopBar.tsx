@@ -1,4 +1,5 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Button } from "./ui/button";
 import { ButtonGroup } from "./ui/button-group";
 import {
@@ -9,6 +10,7 @@ import {
   SelectValue,
 } from "./ui/select";
 import { Plus } from "lucide-react";
+import type { SetRecord } from "@/types/sets";
 
 interface TopBarProps {
   selectedSet: string;
@@ -24,12 +26,50 @@ export function TopBar({
   orgLogo,
 }: TopBarProps) {
   const navigate = useNavigate();
-  const questionSets = [
-    "Science Questions Set - 1",
-    "History Questions Set - 1",
-    "Geography Questions Set - 1",
-    "Mathematics Questions Set - 1",
-  ];
+  const location = useLocation();
+  const [sets, setSets] = useState<SetRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const onSetChangeRef = useRef(onSetChange);
+  onSetChangeRef.current = onSetChange;
+
+  const loadSets = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const data = await window.setsApi?.list?.();
+      setSets(data ?? []);
+      if (data?.length) {
+        const activeSet = data.find((s: SetRecord) => s.isActive);
+        if (activeSet) {
+          onSetChangeRef.current(activeSet.id);
+        } else if (!selectedSet) {
+          onSetChangeRef.current(data[0].id);
+        }
+      }
+    } catch (err) {
+      console.warn("Failed to load sets", err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [selectedSet]);
+
+  useEffect(() => {
+    loadSets();
+  }, [location.pathname, loadSets]);
+
+  const handleSetChange = async (setId: string) => {
+    onSetChange(setId);
+    try {
+      await window.setsApi?.setActive?.(setId);
+      const data = await window.setsApi?.list?.();
+      setSets(data ?? []);
+    } catch (err) {
+      console.warn("Failed to set active set", err);
+    }
+  };
+
+  const selectedSetName =
+    sets.find((s) => s.id === selectedSet)?.name ?? "Select question set";
 
   return (
     <div
@@ -50,36 +90,36 @@ export function TopBar({
             style={{ objectFit: "contain" }}
           />
           <ButtonGroup>
-            <Select value={selectedSet} onValueChange={onSetChange}>
+            <Select value={selectedSet} onValueChange={handleSetChange}>
               <SelectTrigger
-                className="min-w-[250px] justify-between border hover:[rgb(var(--color-primary))] cursor-pointer"
+                className="min-w-[250px] justify-between border cursor-pointer"
                 data-size="default"
-                style={{
-                  backgroundColor: "rgb(var(--color-bg-primary))",
-                  borderColor: "rgb(var(--color-border))",
-                  color: "rgb(var(--color-text-primary))",
-                }}
               >
-                <SelectValue placeholder="Select question set" />
+                <SelectValue
+                  placeholder={isLoading ? "Loading..." : "Select question set"}
+                >
+                  {selectedSetName}
+                </SelectValue>
               </SelectTrigger>
-              <SelectContent
-                align="start"
-                className="border"
-                style={{
-                  backgroundColor: "rgb(var(--color-bg-primary))",
-                  borderColor: "rgb(var(--color-border))",
-                  color: "rgb(var(--color-text-primary))",
-                }}
-              >
-                {questionSets.map((set) => (
-                  <SelectItem
-                    className="hover:bg-[rgb(var(--color-card-hover))] cursor-pointer"
-                    key={set}
-                    value={set}
+              <SelectContent align="start" className="border">
+                {sets.length === 0 && !isLoading ? (
+                  <div
+                    className="px-3 py-2 text-sm"
+                    style={{ color: "rgb(var(--color-text-muted))" }}
                   >
-                    {set}
-                  </SelectItem>
-                ))}
+                    No sets found. Create one!
+                  </div>
+                ) : (
+                  sets.map((set) => (
+                    <SelectItem
+                      className="cursor-pointer"
+                      key={set.id}
+                      value={set.id}
+                    >
+                      {set.name}
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
             <Button

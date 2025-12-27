@@ -33,17 +33,19 @@ const TAB_TO_PATH: Record<string, string> = {
 };
 
 export function Layout() {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [teamPanelExpanded, setTeamPanelExpanded] = useState(false);
-  const [selectedSet, setSelectedSet] = useState("Science Questions Set - 1");
+  const [selectedSet, setSelectedSet] = useState("");
   const [statsPanelOpen, setStatsPanelOpen] = useState(false);
   const [themePanelOpen, setThemePanelOpen] = useState(false);
   const [sidebarSize, setSidebarSize] = useState(15);
+  const [topBarSize, setTopBarSize] = useState(8);
+  const [bottomPanelSize, setBottomPanelSize] = useState(7);
   const [isTopBarVisible, setIsTopBarVisible] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentTheme, setCurrentTheme] = useState<ThemeId>("blue");
   const [orgData, setOrgData] = useState<OrgRecord | null>(null);
+  const [initialSizesLoaded, setInitialSizesLoaded] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -52,6 +54,7 @@ export function Layout() {
   const sidebarPanelRef = useRef<ImperativePanelHandle>(null);
   const topBarPanelRef = useRef<ImperativePanelHandle>(null);
   const bottomPanelRef = useRef<ImperativePanelHandle>(null);
+  const resizeSaveTimeoutRef = useRef<number | null>(null);
   const topBarMaxPercent = useMemo(() => {
     const viewportHeight =
       typeof window !== "undefined" ? window.innerHeight : 0;
@@ -59,7 +62,7 @@ export function Layout() {
     return Math.min(12, Math.max(6, percent));
   }, []);
 
-  const applyTheme = (themeId: ThemeId) => {
+  const applyTheme = (themeId: ThemeId, save = true) => {
     const theme = THEMES[themeId];
     if (!theme) {
       toast.error("Theme not found.");
@@ -108,7 +111,28 @@ export function Layout() {
     setVar("--color-muted-foreground", resolvedTheme.mutedForeground);
     setCurrentTheme(themeId);
 
-    toast.success("Theme applied successfully!");
+    if (save) {
+      window.orgApi?.updateTheme?.(themeId).catch((err) => {
+        console.warn("Failed to save theme", err);
+      });
+      toast.success("Theme applied successfully!");
+    }
+  };
+
+  const saveResizablePanels = (updates: {
+    sidebarSize?: number;
+    topBarSize?: number;
+    bottomPanelSize?: number;
+  }) => {
+    if (resizeSaveTimeoutRef.current) {
+      window.clearTimeout(resizeSaveTimeoutRef.current);
+    }
+    resizeSaveTimeoutRef.current = window.setTimeout(() => {
+      resizeSaveTimeoutRef.current = null;
+      window.orgApi?.updateResizablePanels?.(updates).catch((err) => {
+        console.warn("Failed to save panel sizes", err);
+      });
+    }, 500);
   };
 
   const handleExport = () => {
@@ -117,12 +141,12 @@ export function Layout() {
 
   const handleSidebarToggle = () => {
     if (sidebarPanelRef.current) {
-      if (sidebarCollapsed || sidebarSize <= 5) {
+      if (sidebarSize < 4) {
+        sidebarPanelRef.current.resize(5);
+      } else if (sidebarSize < 12) {
         sidebarPanelRef.current.resize(15);
-        setSidebarCollapsed(false);
       } else {
         sidebarPanelRef.current.resize(5);
-        setSidebarCollapsed(true);
       }
     }
   };
@@ -185,7 +209,7 @@ export function Layout() {
         switch (e.key) {
           case "k":
             e.preventDefault();
-            setSidebarCollapsed(!sidebarCollapsed);
+            handleSidebarToggle();
             break;
           case "e":
             e.preventDefault();
@@ -202,7 +226,7 @@ export function Layout() {
 
     window.addEventListener("keydown", handleKeyPress);
     return () => window.removeEventListener("keydown", handleKeyPress);
-  }, [sidebarCollapsed]);
+  }, [sidebarSize]);
 
   useEffect(() => {
     const checkOrg = async () => {
@@ -213,6 +237,21 @@ export function Layout() {
         if (!org && !onOnboarding) {
           navigate("/onboarding", { replace: true });
         }
+        if (org) {
+          const savedTheme = org.selectedTheme as ThemeId | undefined;
+          if (savedTheme && THEMES[savedTheme]) {
+            applyTheme(savedTheme, false);
+          }
+          const savedSidebar = org.sidebarSize ?? 15;
+          const savedTopBar = org.topBarSize ?? 8;
+          const savedBottom = org.bottomPanelSize ?? 7;
+          setSidebarSize(savedSidebar);
+          setTopBarSize(savedTopBar);
+          setBottomPanelSize(savedBottom);
+          setTeamPanelExpanded(savedBottom > 12);
+          setIsTopBarVisible(savedTopBar > 2);
+          setInitialSizesLoaded(true);
+        }
       } catch (err) {
         console.warn("Failed to load org", err);
       } finally {
@@ -221,6 +260,19 @@ export function Layout() {
     };
     checkOrg();
   }, [location.pathname, navigate]);
+
+  useEffect(() => {
+    if (!initialSizesLoaded) return;
+    if (sidebarPanelRef.current) {
+      sidebarPanelRef.current.resize(sidebarSize);
+    }
+    if (topBarPanelRef.current) {
+      topBarPanelRef.current.resize(topBarSize);
+    }
+    if (bottomPanelRef.current) {
+      bottomPanelRef.current.resize(bottomPanelSize);
+    }
+  }, [initialSizesLoaded, sidebarSize, topBarSize, bottomPanelSize]);
 
   const clampPercent = (val: number) => Math.min(100, Math.max(0, val));
   const parsePanelPosition = (raw?: string | null): PanelPosition | null => {
@@ -281,7 +333,7 @@ export function Layout() {
   return (
     <InterfaceStateProvider
       currentTheme={currentTheme}
-      sidebarCollapsed={sidebarCollapsed}
+      sidebarCollapsed={sidebarSize < 12}
       teamPanelExpanded={teamPanelExpanded}
       isTopBarVisible={isTopBarVisible}
       initialPanelPositions={initialPanelPositions}
@@ -289,7 +341,7 @@ export function Layout() {
       <div className="h-screen overflow-hidden">
         <Toaster position="top-right" richColors />
 
-        {!orgLoaded ? (
+        {!orgLoaded || (!initialSizesLoaded && orgData) ? (
           <main className="h-full flex items-center justify-center">
             <p style={{ color: "rgb(var(--color-text-secondary))" }}>
               Loading...
@@ -301,21 +353,19 @@ export function Layout() {
               <ResizablePanel
                 ref={sidebarPanelRef}
                 className="overflow-hidden"
-                defaultSize={sidebarCollapsed ? 5 : 15}
-                minSize={5}
-                maxSize={25}
+                defaultSize={sidebarSize}
+                minSize={3}
+                maxSize={30}
                 collapsible={true}
                 onResize={(size) => {
                   setSidebarSize(size);
-                  if (size <= 5) {
-                    setSidebarCollapsed(true);
-                  } else if (size > 5) {
-                    setSidebarCollapsed(false);
+                  if (initialSizesLoaded) {
+                    saveResizablePanels({ sidebarSize: size });
                   }
                 }}
               >
                 <Sidebar
-                  collapsed={sidebarCollapsed}
+                  sidebarSize={sidebarSize}
                   onToggleCollapse={handleSidebarToggle}
                   currentRoute={activeTab}
                   onNavigate={handleTabChange}
@@ -342,9 +392,7 @@ export function Layout() {
                 <ResizablePanelGroup direction="vertical">
                   <ResizablePanel
                     ref={topBarPanelRef}
-                    defaultSize={
-                      isTopBarVisible ? Math.min(topBarMaxPercent, 10) : 0
-                    }
+                    defaultSize={topBarSize}
                     minSize={0}
                     maxSize={topBarMaxPercent}
                     collapsible
@@ -355,6 +403,10 @@ export function Layout() {
                         return;
                       }
                       setIsTopBarVisible(size > 2);
+                      setTopBarSize(size);
+                      if (initialSizesLoaded) {
+                        saveResizablePanels({ topBarSize: size });
+                      }
                     }}
                   >
                     {isTopBarVisible && (
@@ -370,7 +422,7 @@ export function Layout() {
                   <ResizableHandle withHandle />
 
                   <ResizablePanel
-                    defaultSize={teamPanelExpanded ? 80 : 83}
+                    defaultSize={100 - topBarSize - bottomPanelSize}
                     minSize={20}
                   >
                     <div className="h-full overflow-hidden flex flex-col">
@@ -390,12 +442,16 @@ export function Layout() {
 
                   <ResizablePanel
                     ref={bottomPanelRef}
-                    defaultSize={teamPanelExpanded ? 40 : 7}
+                    defaultSize={bottomPanelSize}
                     minSize={0}
                     maxSize={50}
                     onResize={(size) => {
                       const expanded = size > 12;
                       setTeamPanelExpanded(expanded);
+                      setBottomPanelSize(size);
+                      if (initialSizesLoaded) {
+                        saveResizablePanels({ bottomPanelSize: size });
+                      }
                     }}
                   >
                     <TeamScores
@@ -415,7 +471,7 @@ export function Layout() {
               isOpen={themePanelOpen}
               onClose={() => setThemePanelOpen(false)}
               activeTheme={currentTheme}
-              onThemeApply={applyTheme}
+              onThemeApply={(themeId) => applyTheme(themeId, true)}
             />
           </>
         )}

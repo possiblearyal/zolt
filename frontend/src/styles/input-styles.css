@@ -4,16 +4,17 @@
   height: 55px;
   border-radius: 55px;
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: auto 1fr auto;
   padding: 0 0.4rem;
   position: relative;
-  border: 1px solid var(--border);
+  border: 2px solid;
   backdrop-filter: blur(10px);
-  transition: border-color 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .input-field:focus-within {
-  border-color: var(--primary);
+  border-color: rgb(var(--color-primary));
+  box-shadow: 0 0 0 3px rgba(var(--color-primary), 0.1);
 }
 
 .input-field .icon {
@@ -32,6 +33,8 @@
   font-weight: 400;
   font-size: 1.1rem;
   width: 100%;
+  color: rgb(var(--color-text-primary));
+  -webkit-text-fill-color: rgb(var(--color-text-primary));
 }
 
 .input-field input:focus {
@@ -43,31 +46,32 @@
 .input-field input:-webkit-autofill:hover,
 .input-field input:-webkit-autofill:focus,
 .input-field input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 30px transparent inset !important;
-  -webkit-text-fill-color: var(--foreground) !important;
-  background-color: transparent !important;
+  -webkit-box-shadow: 0 0 0 30px rgb(var(--color-bg-primary)) inset !important;
+  -webkit-text-fill-color: rgb(var(--color-text-primary)) !important;
+  background-color: rgb(var(--color-bg-primary)) !important;
   background-image: none !important;
   transition: background-color 5000s ease-in-out 0s;
-  color: var(--foreground) !important;
-  caret-color: var(--foreground) !important;
+  color: rgb(var(--color-text-primary)) !important;
+  caret-color: rgb(var(--color-text-primary)) !important;
 }
 
 .input-field input:autofill {
-  background: transparent !important;
+  background: rgb(var(--color-bg-primary)) !important;
   -webkit-background-clip: text !important;
   background-clip: text !important;
-  color: var(--foreground) !important;
+  color: rgb(var(--color-text-primary)) !important;
+  -webkit-text-fill-color: rgb(var(--color-text-primary)) !important;
 }
 
 .input-field input:-webkit-autofill::selection {
-  background: rgba(59, 130, 246, 0.3) !important;
-  color: var(--foreground) !important;
+  background: rgba(var(--color-primary), 0.3) !important;
+  color: rgb(var(--color-text-primary)) !important;
 }
 
 .input-field input:-webkit-autofill,
 .input-field input[data-webkit-autofill] {
-  -webkit-text-fill-color: var(--foreground) !important;
-  color: var(--foreground) !important;
+  -webkit-text-fill-color: rgb(var(--color-text-primary)) !important;
+  color: rgb(var(--color-text-primary)) !important;
 }
 
 .input-field input:-webkit-autofill:focus,
@@ -76,19 +80,17 @@
 .input-field input:not(:placeholder-shown),
 .input-field input[autocomplete]:focus,
 .input-field input[autocomplete]:active {
-  -webkit-text-fill-color: var(--foreground) !important;
-  color: var(--foreground) !important;
-  background: transparent !important;
+  -webkit-text-fill-color: rgb(var(--color-text-primary)) !important;
+  color: rgb(var(--color-text-primary)) !important;
+  background: rgb(var(--color-bg-primary)) !important;
   -webkit-background-clip: text !important;
   background-clip: text !important;
 }
 
 .input-field input::placeholder {
-  -webkit-text-fill-color: var(--muted-foreground) !important;
-  color: var(--muted-foreground) !important;
-  background: transparent !important;
-  -webkit-background-clip: text !important;
-  background-clip: text !important;
+  -webkit-text-fill-color: rgb(var(--color-text-muted)) !important;
+  color: rgb(var(--color-text-muted)) !important;
+  opacity: 0.6;
 }
 
 .input-field input::-webkit-textfield-decoration-container {

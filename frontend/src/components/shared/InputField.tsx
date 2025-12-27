@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useId } from "react";
+import React, { useId, useState } from "react";
 import clsx from "clsx";
+import { Eye, EyeOff } from "lucide-react";
 import "@/styles/input-styles.css";
 
 export interface InputFieldProps {
@@ -46,25 +47,39 @@ const InputField: React.FC<InputFieldProps> = ({
   const reactId = useId();
   const inputId = `${name}-${reactId}`;
   const errorId = error ? `${inputId}-error` : undefined;
+  const [showPassword, setShowPassword] = useState(false);
+  const isPasswordType = type === "password";
+  const inputType = isPasswordType
+    ? showPassword
+      ? "text"
+      : "password"
+    : type;
 
   return (
     <div
       className={clsx(
-        "input-field bg-white dark:bg-gray-800 border relative flex items-center border-gray-300 dark:border-gray-600",
+        "input-field border relative flex items-center",
         error && "ring-1 ring-red-500 border-red-500",
         disabled && "opacity-50 cursor-not-allowed",
         className
       )}
+      style={{
+        backgroundColor: "rgb(var(--color-bg-primary))",
+        borderColor: error ? undefined : "rgb(var(--color-border))",
+      }}
     >
       {icon && (
-        <span className="icon text-gray-600 dark:text-gray-300 flex items-center justify-center">
+        <span
+          className="icon flex items-center justify-center"
+          style={{ color: "rgb(var(--color-text-secondary))" }}
+        >
           {icon}
         </span>
       )}
       <input
         id={inputId}
         name={name}
-        type={type}
+        type={inputType}
         placeholder={placeholder}
         value={value}
         defaultValue={defaultValue}
@@ -84,7 +99,30 @@ const InputField: React.FC<InputFieldProps> = ({
           error && "placeholder:text-red-400",
           inputClassName
         )}
+        style={{ color: "rgb(var(--color-text-primary))" }}
       />
+      {isPasswordType && (
+        <button
+          type="button"
+          onClick={() => setShowPassword((prev) => !prev)}
+          className="flex items-center justify-center p-2 mr-3 rounded-full transition-colors"
+          style={{ color: "rgb(var(--color-text-secondary))" }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor =
+              "rgb(var(--color-bg-hover))";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = "transparent";
+          }}
+          aria-label={showPassword ? "Hide password" : "Show password"}
+        >
+          {showPassword ? (
+            <EyeOff className="h-5 w-5" />
+          ) : (
+            <Eye className="h-5 w-5" />
+          )}
+        </button>
+      )}
       {error && (
         <span id={errorId} className="sr-only">{`Error: ${error}`}</span>
       )}

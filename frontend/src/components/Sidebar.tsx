@@ -25,8 +25,21 @@ import {
 import { useInterfaceState } from "../hooks/useInterfaceState";
 import svgPaths from "../imports/svg-paths";
 
+const SIDEBAR_HIDDEN_THRESHOLD = 4; 
+const SIDEBAR_COLLAPSED_THRESHOLD = 7; 
+const SIDEBAR_OPENED_THRESHOLD = 12;
+
+type SidebarMode = "hidden" | "collapsed" | "transition" | "opened";
+
+function getSidebarMode(size: number): SidebarMode {
+  if (size < SIDEBAR_HIDDEN_THRESHOLD) return "hidden";
+  if (size < SIDEBAR_COLLAPSED_THRESHOLD) return "collapsed";
+  if (size < SIDEBAR_OPENED_THRESHOLD) return "transition";
+  return "opened";
+}
+
 interface SidebarProps {
-  collapsed: boolean;
+  sidebarSize: number;
   onToggleCollapse: () => void;
   currentRoute: string;
   onNavigate: (tab: string) => void;
@@ -66,7 +79,7 @@ const menuItems = [
 ];
 
 export function Sidebar({
-  collapsed,
+  sidebarSize,
   onToggleCollapse,
   currentRoute,
   onNavigate,
@@ -79,6 +92,11 @@ export function Sidebar({
   onToggleThemePanel,
   themePanelOpen,
 }: SidebarProps) {
+  const mode = getSidebarMode(sidebarSize);
+  const isHidden = mode === "hidden";
+  const isCollapsed = mode === "collapsed" || mode === "transition";
+  const showText = mode === "opened";
+
   const [logoHovered, setLogoHovered] = useState(false);
   const [quickActionsExpanded, setQuickActionsExpanded] = useState(false);
   const quickActionsRef = useRef<HTMLDivElement | null>(null);
@@ -163,28 +181,61 @@ export function Sidebar({
       window.removeEventListener("scroll", updateRect, true);
       registerAnchor("quick-actions-anchor", null);
     };
-  }, [collapsed, quickActionsExpanded, registerAnchor]);
+  }, [mode, quickActionsExpanded, registerAnchor]);
+
+  if (isHidden) {
+    return (
+      <div
+        className="h-screen border-r flex flex-col items-center justify-center"
+        style={{
+          borderColor: "rgb(var(--color-border))",
+          backgroundColor: "rgb(var(--color-bg-primary))",
+        }}
+      >
+        <button
+          onClick={onToggleCollapse}
+          className="p-2 rounded-lg transition-all duration-200"
+          style={{
+            color: "rgb(var(--color-text-tertiary))",
+            backgroundColor: "transparent",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor =
+              "rgb(var(--color-bg-hover))";
+            e.currentTarget.style.color = "rgb(var(--color-text-secondary))";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = "transparent";
+            e.currentTarget.style.color = "rgb(var(--color-text-tertiary))";
+          }}
+          aria-label="Expand sidebar"
+        >
+          <ChevronRight size={16} />
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div
-      className="h-screen border-r flex flex-col"
+      className="h-screen border-r flex flex-col overflow-hidden"
       style={{
         borderColor: "rgb(var(--color-border))",
         backgroundColor: "rgb(var(--color-bg-primary))",
       }}
     >
       <div
-        className="flex items-center border-b transition-all duration-300 relative"
+        className="flex items-center border-b transition-all duration-300 relative shrink-0"
         style={{
           height: "var(--topbar-height)",
           borderColor: "rgb(var(--color-border))",
-          paddingLeft: "24px",
-          paddingRight: "24px",
-          justifyContent: collapsed ? "center" : "flex-start",
+          paddingLeft: isCollapsed ? "8px" : "24px",
+          paddingRight: isCollapsed ? "8px" : "24px",
+          justifyContent: isCollapsed ? "center" : "flex-start",
         }}
       >
-        {!collapsed ? (
-          <div className="flex items-center gap-3">
+        {showText ? (
+          <div className="flex items-center gap-3 overflow-hidden">
             <div className="flex items-center justify-center rounded-lg shrink-0">
               <img
                 src="/zolt.svg"
@@ -194,7 +245,10 @@ export function Sidebar({
                 style={{ objectFit: "contain" }}
               />
             </div>
-            <span style={{ color: "rgb(var(--color-text-primary))" }}>
+            <span
+              className="whitespace-nowrap overflow-hidden text-ellipsis"
+              style={{ color: "rgb(var(--color-text-primary))" }}
+            >
               Zolt
             </span>
           </div>
@@ -237,7 +291,7 @@ export function Sidebar({
           </div>
         )}
 
-        {!collapsed ? (
+        {showText && (
           <button
             onClick={onToggleCollapse}
             className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-lg transition-all duration-200"
@@ -256,10 +310,10 @@ export function Sidebar({
           >
             <ChevronLeft size={18} />
           </button>
-        ) : null}
+        )}
       </div>
 
-      <nav className="flex-1 px-3 py-6">
+      <nav className="flex-1 px-3 py-6 overflow-y-auto overflow-x-hidden">
         <ul className="space-y-1">
           {menuItems.map((item) => {
             const Icon = item.icon;
@@ -269,7 +323,7 @@ export function Sidebar({
               <li key={item.id}>
                 <button
                   onClick={() => onNavigate(item.id)}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative"
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative overflow-hidden"
                   style={{
                     backgroundColor: isActive
                       ? "rgb(var(--color-primary))"
@@ -347,9 +401,13 @@ export function Sidebar({
                   ) : (
                     Icon && <Icon size={18} className="shrink-0" />
                   )}
-                  {!collapsed && <span className="text-sm">{item.label}</span>}
+                  {showText && (
+                    <span className="text-sm whitespace-nowrap overflow-hidden text-ellipsis">
+                      {item.label}
+                    </span>
+                  )}
 
-                  {collapsed && (
+                  {isCollapsed && (
                     <div
                       className="absolute left-full ml-2 px-2 py-1 text-xs rounded opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-50"
                       style={tooltipStyles}
@@ -366,14 +424,14 @@ export function Sidebar({
 
       <div
         ref={quickActionsRef}
-        className="p-3 border-t"
+        className="p-3 border-t shrink-0 overflow-hidden"
         style={{ borderColor: "rgb(var(--color-border))" }}
         id="quick-actions-anchor"
       >
         <div className="relative">
           <button
             onClick={() => setQuickActionsExpanded((prev) => !prev)}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 relative group"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 relative group overflow-hidden"
             style={{
               color: "rgb(var(--color-text-secondary))",
               backgroundColor: quickActionsExpanded
@@ -403,9 +461,9 @@ export function Sidebar({
                 }}
               />
             </motion.div>
-            {!collapsed && (
+            {showText && (
               <span
-                className="text-sm"
+                className="text-sm whitespace-nowrap overflow-hidden text-ellipsis"
                 style={{
                   color: quickActionsExpanded
                     ? "rgb(var(--color-primary-foreground, 255 255 255))"
@@ -416,7 +474,7 @@ export function Sidebar({
               </span>
             )}
 
-            {collapsed && (
+            {isCollapsed && (
               <div
                 className="absolute left-full ml-2 px-2 py-1 text-xs rounded opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-50"
                 style={tooltipStyles}
@@ -431,7 +489,7 @@ export function Sidebar({
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="mt-2 space-y-1"
+              className="mt-2 space-y-1 overflow-hidden"
             >
               {quickActions.map((action, index) => {
                 const Icon = action.icon;
@@ -445,7 +503,7 @@ export function Sidebar({
                       action.onClick();
                       setQuickActionsExpanded(false);
                     }}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 relative group"
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 relative group overflow-hidden"
                     style={{
                       color: "rgb(var(--color-text-secondary))",
                       backgroundColor: action.active
@@ -463,7 +521,7 @@ export function Sidebar({
                     }}
                   >
                     <div
-                      className="p-1.5 rounded"
+                      className="p-1.5 rounded shrink-0"
                       style={{
                         backgroundColor: action.background,
                         color: "rgb(var(--color-text-inverse))",
@@ -471,14 +529,14 @@ export function Sidebar({
                     >
                       <Icon size={14} />
                     </div>
-                    {!collapsed && (
-                      <div className="flex flex-col text-left">
-                        <span className="text-sm font-medium">
+                    {showText && (
+                      <div className="flex flex-col text-left overflow-hidden">
+                        <span className="text-sm font-medium whitespace-nowrap overflow-hidden text-ellipsis">
                           {action.label}
                         </span>
                         {action.sublabel && (
                           <span
-                            className="text-xs text-white/60"
+                            className="text-xs whitespace-nowrap overflow-hidden text-ellipsis"
                             style={{
                               color: "rgb(var(--color-text-secondary))",
                             }}
@@ -489,7 +547,7 @@ export function Sidebar({
                       </div>
                     )}
 
-                    {collapsed && (
+                    {isCollapsed && (
                       <div
                         className="absolute left-full ml-2 px-2 py-1 text-xs rounded opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-50"
                         style={tooltipStyles}

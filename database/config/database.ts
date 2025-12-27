@@ -51,6 +51,7 @@ function createTables(db: Database.Database) {
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
       description TEXT,
+      isActive INTEGER DEFAULT 0,
       createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
       updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
     );

@@ -134,14 +134,12 @@ app.whenReady().then(() => {
       try {
         const db = dbInstance ?? getDatabase();
         db.prepare(
-          `INSERT INTO organizations (id, name, masterPin, imageUrl, themeModal, statsModal, createdAt, updatedAt)
-           VALUES (@id, @name, @masterPin, @imageUrl, @themeModal, @statsModal, @createdAt, @updatedAt)
+          `INSERT INTO organizations (id, name, masterPin, imageUrl, themeModal, statsModal, selectedTheme, sidebarSize, topBarSize, bottomPanelSize, createdAt, updatedAt)
+           VALUES (@id, @name, @masterPin, @imageUrl, @themeModal, @statsModal, @selectedTheme, @sidebarSize, @topBarSize, @bottomPanelSize, @createdAt, @updatedAt)
            ON CONFLICT(id) DO UPDATE SET
              name = excluded.name,
              masterPin = excluded.masterPin,
              imageUrl = excluded.imageUrl,
-             themeModal = excluded.themeModal,
-             statsModal = excluded.statsModal,
              updatedAt = excluded.updatedAt`
         ).run({
           id: "org-default",
@@ -150,6 +148,10 @@ app.whenReady().then(() => {
           imageUrl: imageUrl ?? null,
           themeModal: JSON.stringify({ x: 50, y: 50, mode: "percent" }),
           statsModal: JSON.stringify({ x: 50, y: 50, mode: "percent" }),
+          selectedTheme: "blue",
+          sidebarSize: 15,
+          topBarSize: 8,
+          bottomPanelSize: 7,
           createdAt: now,
           updatedAt: now,
         });
@@ -196,6 +198,224 @@ app.whenReady().then(() => {
       }
     }
   );
+
+  ipcMain.handle(
+    "org:update-resizable-panels",
+    (
+      _event,
+      payload: {
+        sidebarSize?: number;
+        topBarSize?: number;
+        bottomPanelSize?: number;
+      }
+    ) => {
+      try {
+        const db = dbInstance ?? getDatabase();
+        const updates: string[] = [];
+        const params: Record<string, unknown> = {
+          id: "org-default",
+          updatedAt: new Date().toISOString(),
+        };
+
+        if (payload.sidebarSize !== undefined) {
+          updates.push("sidebarSize = @sidebarSize");
+          params.sidebarSize = payload.sidebarSize;
+        }
+        if (payload.topBarSize !== undefined) {
+          updates.push("topBarSize = @topBarSize");
+          params.topBarSize = payload.topBarSize;
+        }
+        if (payload.bottomPanelSize !== undefined) {
+          updates.push("bottomPanelSize = @bottomPanelSize");
+          params.bottomPanelSize = payload.bottomPanelSize;
+        }
+
+        if (updates.length > 0) {
+          updates.push("updatedAt = @updatedAt");
+          db.prepare(
+            `UPDATE organizations SET ${updates.join(", ")} WHERE id = @id`
+          ).run(params);
+        }
+
+        const saved = db
+          .prepare(`SELECT * FROM organizations WHERE id = ?`)
+          .get("org-default");
+        return saved;
+      } catch (err) {
+        console.error("org:update-resizable-panels failed", err);
+        throw err;
+      }
+    }
+  );
+
+  ipcMain.handle("org:update-theme", (_event, themeId: string) => {
+    try {
+      const db = dbInstance ?? getDatabase();
+      db.prepare(
+        `UPDATE organizations SET selectedTheme = @selectedTheme, updatedAt = @updatedAt WHERE id = @id`
+      ).run({
+        id: "org-default",
+        selectedTheme: themeId,
+        updatedAt: new Date().toISOString(),
+      });
+      const saved = db
+        .prepare(`SELECT * FROM organizations WHERE id = ?`)
+        .get("org-default");
+      return saved;
+    } catch (err) {
+      console.error("org:update-theme failed", err);
+      throw err;
+    }
+  });
+
+  ipcMain.handle("sets:list", () => {
+    try {
+      const db = dbInstance ?? getDatabase();
+      const rows = db
+        .prepare(`SELECT * FROM sets ORDER BY createdAt DESC`)
+        .all();
+      return rows ?? [];
+    } catch (err) {
+      console.error("sets:list failed", err);
+      throw err;
+    }
+  });
+
+  ipcMain.handle("sets:get", (_event, id: string) => {
+    try {
+      const db = dbInstance ?? getDatabase();
+      const row = db.prepare(`SELECT * FROM sets WHERE id = ?`).get(id);
+      return row ?? null;
+    } catch (err) {
+      console.error("sets:get failed", err);
+      throw err;
+    }
+  });
+
+  ipcMain.handle(
+    "sets:create",
+    (
+      _event,
+      payload: { name: string; description?: string; isActive?: boolean }
+    ) => {
+      const { name, description, isActive } = payload;
+      if (!name) {
+        throw new Error("name is required");
+      }
+      const now = new Date().toISOString();
+      const id = `set-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      try {
+        const db = dbInstance ?? getDatabase();
+        if (isActive) {
+          db.prepare(
+            `UPDATE sets SET isActive = 0, updatedAt = @updatedAt`
+          ).run({
+            updatedAt: now,
+          });
+        }
+        db.prepare(
+          `INSERT INTO sets (id, name, description, isActive, createdAt, updatedAt)
+           VALUES (@id, @name, @description, @isActive, @createdAt, @updatedAt)`
+        ).run({
+          id,
+          name,
+          description: description ?? null,
+          isActive: isActive ? 1 : 0,
+          createdAt: now,
+          updatedAt: now,
+        });
+        const saved = db.prepare(`SELECT * FROM sets WHERE id = ?`).get(id);
+        return saved;
+      } catch (err) {
+        console.error("sets:create failed", err);
+        throw err;
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "sets:update",
+    (
+      _event,
+      payload: {
+        id: string;
+        name?: string;
+        description?: string;
+        isActive?: boolean;
+      }
+    ) => {
+      const { id, name, description, isActive } = payload;
+      if (!id) {
+        throw new Error("id is required");
+      }
+      try {
+        const db = dbInstance ?? getDatabase();
+        const updates: string[] = [];
+        const params: Record<string, unknown> = {
+          id,
+          updatedAt: new Date().toISOString(),
+        };
+
+        if (name !== undefined) {
+          updates.push("name = @name");
+          params.name = name;
+        }
+        if (description !== undefined) {
+          updates.push("description = @description");
+          params.description = description;
+        }
+        if (isActive !== undefined) {
+          updates.push("isActive = @isActive");
+          params.isActive = isActive ? 1 : 0;
+        }
+
+        if (updates.length > 0) {
+          updates.push("updatedAt = @updatedAt");
+          db.prepare(
+            `UPDATE sets SET ${updates.join(", ")} WHERE id = @id`
+          ).run(params);
+        }
+
+        const saved = db.prepare(`SELECT * FROM sets WHERE id = ?`).get(id);
+        return saved;
+      } catch (err) {
+        console.error("sets:update failed", err);
+        throw err;
+      }
+    }
+  );
+
+  ipcMain.handle("sets:delete", (_event, id: string) => {
+    try {
+      const db = dbInstance ?? getDatabase();
+      db.prepare(`DELETE FROM sets WHERE id = ?`).run(id);
+      return { success: true };
+    } catch (err) {
+      console.error("sets:delete failed", err);
+      throw err;
+    }
+  });
+
+  ipcMain.handle("sets:setActive", (_event, id: string) => {
+    try {
+      const db = dbInstance ?? getDatabase();
+      const now = new Date().toISOString();
+      db.prepare(`UPDATE sets SET isActive = 0, updatedAt = @updatedAt`).run({
+        updatedAt: now,
+      });
+      db.prepare(
+        `UPDATE sets SET isActive = 1, updatedAt = @updatedAt WHERE id = @id`
+      ).run({
+        id,
+        updatedAt: now,
+      });
+      const saved = db.prepare(`SELECT * FROM sets WHERE id = ?`).get(id);
+      return saved;
+    } catch (err) {
+      console.error("sets:setActive failed", err);
+      throw err;
+    }
+  });
 
   createWindow();
 

@@ -12,6 +12,10 @@ CREATE TABLE IF NOT EXISTS organizations (
   -- JSON: { "x": 50, "y": 50, "mode": "percent" }
   statsModal TEXT NOT NULL,
   -- JSON: { "x": 100, "y": 100, "mode": "pixel" }
+  -- Resizable panel sizes (percentage values)
+  sidebarSize REAL DEFAULT 15,
+  topBarSize REAL DEFAULT 8,
+  bottomPanelSize REAL DEFAULT 7,
   createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
   updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
 );

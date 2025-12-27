@@ -141,7 +141,6 @@ export function InterfaceStateProvider({
     });
   }, []);
 
-  // Merge in any initial positions provided after mount (e.g., from DB)
   useEffect(() => {
     if (!initialPanelPositions) return;
     setPanelPositions((prev) => ({ ...initialPanelPositions, ...prev }));

@@ -20,6 +20,8 @@ import {
 } from "./ui/resizable";
 import type { ImperativePanelHandle } from "react-resizable-panels";
 import { InterfaceStateProvider } from "../hooks/useInterfaceState";
+import type { PanelPosition } from "../types/org";
+import type { OrgRecord } from "../types/org";
 
 const TAB_TO_PATH: Record<string, string> = {
   home: "/",
@@ -41,9 +43,11 @@ export function Layout() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentTheme, setCurrentTheme] = useState<ThemeId>("blue");
+  const [orgData, setOrgData] = useState<OrgRecord | null>(null);
 
   const navigate = useNavigate();
   const location = useLocation();
+  const [orgLoaded, setOrgLoaded] = useState(false);
 
   const sidebarPanelRef = useRef<ImperativePanelHandle>(null);
   const topBarPanelRef = useRef<ImperativePanelHandle>(null);
@@ -201,6 +205,62 @@ export function Layout() {
   }, [sidebarCollapsed]);
 
   useEffect(() => {
+    const checkOrg = async () => {
+      try {
+        const org = await window.orgApi?.getOrg?.();
+        setOrgData(org ?? null);
+        const onOnboarding = location.pathname.startsWith("/onboarding");
+        if (!org && !onOnboarding) {
+          navigate("/onboarding", { replace: true });
+        }
+      } catch (err) {
+        console.warn("Failed to load org", err);
+      } finally {
+        setOrgLoaded(true);
+      }
+    };
+    checkOrg();
+  }, [location.pathname, navigate]);
+
+  const clampPercent = (val: number) => Math.min(100, Math.max(0, val));
+  const parsePanelPosition = (raw?: string | null): PanelPosition | null => {
+    if (!raw) return null;
+    try {
+      const parsed = JSON.parse(raw);
+      if (
+        typeof parsed?.x === "number" &&
+        typeof parsed?.y === "number" &&
+        (parsed?.mode === "px" || parsed?.mode === "percent")
+      ) {
+        if (parsed.mode === "percent") {
+          return {
+            x: clampPercent(parsed.x),
+            y: clampPercent(parsed.y),
+            mode: "percent",
+          };
+        }
+        return {
+          x: parsed.x,
+          y: parsed.y,
+          mode: "px",
+        };
+      }
+    } catch (e) {
+      console.warn("Failed to parse panel position", e);
+    }
+    return null;
+  };
+
+  const initialPanelPositions = useMemo(() => {
+    const positions: Record<string, PanelPosition> = {};
+    const theme = parsePanelPosition(orgData?.themeModal ?? null);
+    const stats = parsePanelPosition(orgData?.statsModal ?? null);
+    if (theme) positions["theme-panel"] = theme;
+    if (stats) positions["stats-panel"] = stats;
+    return positions;
+  }, [orgData]);
+
+  useEffect(() => {
     const handleFullscreenChange = () => {
       setIsFullscreen(Boolean(document.fullscreenElement));
     };
@@ -224,128 +284,141 @@ export function Layout() {
       sidebarCollapsed={sidebarCollapsed}
       teamPanelExpanded={teamPanelExpanded}
       isTopBarVisible={isTopBarVisible}
+      initialPanelPositions={initialPanelPositions}
     >
       <div className="h-screen overflow-hidden">
         <Toaster position="top-right" richColors />
 
-        <ResizablePanelGroup direction="horizontal">
-          <ResizablePanel
-            ref={sidebarPanelRef}
-            className="overflow-hidden"
-            defaultSize={sidebarCollapsed ? 5 : 15}
-            minSize={5}
-            maxSize={25}
-            collapsible={true}
-            onResize={(size) => {
-              setSidebarSize(size);
-              if (size <= 5) {
-                setSidebarCollapsed(true);
-              } else if (size > 5) {
-                setSidebarCollapsed(false);
-              }
-            }}
-          >
-            <Sidebar
-              collapsed={sidebarCollapsed}
-              onToggleCollapse={handleSidebarToggle}
-              currentRoute={activeTab}
-              onNavigate={handleTabChange}
-              onToggleFullscreen={handleFullscreenToggle}
-              isFullscreen={isFullscreen}
-              onToggleEditMode={handleEditModeToggle}
-              isEditMode={isEditMode}
-              onToggleStatsPanel={() => {
-                setStatsPanelOpen((prev) => !prev);
-                setThemePanelOpen(false);
-              }}
-              statsPanelOpen={statsPanelOpen}
-              onToggleThemePanel={() => {
-                setThemePanelOpen((prev) => !prev);
-                setStatsPanelOpen(false);
-              }}
-              themePanelOpen={themePanelOpen}
-            />
-          </ResizablePanel>
-
-          <ResizableHandle withHandle />
-
-          <ResizablePanel defaultSize={60}>
-            <ResizablePanelGroup direction="vertical">
+        {!orgLoaded ? (
+          <main className="h-full flex items-center justify-center">
+            <p style={{ color: "rgb(var(--color-text-secondary))" }}>
+              Loading...
+            </p>
+          </main>
+        ) : (
+          <>
+            <ResizablePanelGroup direction="horizontal">
               <ResizablePanel
-                ref={topBarPanelRef}
-                defaultSize={
-                  isTopBarVisible ? Math.min(topBarMaxPercent, 10) : 0
-                }
-                minSize={0}
-                maxSize={topBarMaxPercent}
-                collapsible
+                ref={sidebarPanelRef}
+                className="overflow-hidden"
+                defaultSize={sidebarCollapsed ? 5 : 15}
+                minSize={5}
+                maxSize={25}
+                collapsible={true}
                 onResize={(size) => {
-                  if (size > topBarMaxPercent && topBarPanelRef.current) {
-                    topBarPanelRef.current.resize(topBarMaxPercent);
-                    setIsTopBarVisible(true);
-                    return;
+                  setSidebarSize(size);
+                  if (size <= 5) {
+                    setSidebarCollapsed(true);
+                  } else if (size > 5) {
+                    setSidebarCollapsed(false);
                   }
-                  setIsTopBarVisible(size > 2);
                 }}
               >
-                {isTopBarVisible && (
-                  <TopBar
-                    selectedSet={selectedSet}
-                    onSetChange={setSelectedSet}
-                  />
-                )}
-              </ResizablePanel>
-
-              <ResizableHandle withHandle />
-
-              <ResizablePanel
-                defaultSize={teamPanelExpanded ? 80 : 83}
-                minSize={20}
-              >
-                <div className="h-full overflow-hidden flex flex-col">
-                  <main
-                    className="flex-1 overflow-auto"
-                    style={{
-                      padding: "40px",
-                      backgroundColor: "rgb(var(--color-bg-secondary))",
-                    }}
-                  >
-                    <Outlet />
-                  </main>
-                </div>
-              </ResizablePanel>
-
-              <ResizableHandle withHandle />
-
-              <ResizablePanel
-                ref={bottomPanelRef}
-                defaultSize={teamPanelExpanded ? 40 : 7}
-                minSize={0}
-                maxSize={50}
-                onResize={(size) => {
-                  const expanded = size > 12;
-                  setTeamPanelExpanded(expanded);
-                }}
-              >
-                <TeamScores
-                  isExpanded={teamPanelExpanded}
-                  onToggle={handleTeamPanelToggle}
+                <Sidebar
+                  collapsed={sidebarCollapsed}
+                  onToggleCollapse={handleSidebarToggle}
+                  currentRoute={activeTab}
+                  onNavigate={handleTabChange}
+                  onToggleFullscreen={handleFullscreenToggle}
+                  isFullscreen={isFullscreen}
+                  onToggleEditMode={handleEditModeToggle}
+                  isEditMode={isEditMode}
+                  onToggleStatsPanel={() => {
+                    setStatsPanelOpen((prev) => !prev);
+                    setThemePanelOpen(false);
+                  }}
+                  statsPanelOpen={statsPanelOpen}
+                  onToggleThemePanel={() => {
+                    setThemePanelOpen((prev) => !prev);
+                    setStatsPanelOpen(false);
+                  }}
+                  themePanelOpen={themePanelOpen}
                 />
               </ResizablePanel>
-            </ResizablePanelGroup>
-          </ResizablePanel>
-        </ResizablePanelGroup>
 
-        <StatsModal
-          isOpen={statsPanelOpen}
-          onClose={() => setStatsPanelOpen(false)}
-        />
-        <ThemeModal
-          isOpen={themePanelOpen}
-          onClose={() => setThemePanelOpen(false)}
-          activeTheme={currentTheme}
-          onThemeApply={applyTheme}
-        />
+              <ResizableHandle withHandle />
+
+              <ResizablePanel defaultSize={60}>
+                <ResizablePanelGroup direction="vertical">
+                  <ResizablePanel
+                    ref={topBarPanelRef}
+                    defaultSize={
+                      isTopBarVisible ? Math.min(topBarMaxPercent, 10) : 0
+                    }
+                    minSize={0}
+                    maxSize={topBarMaxPercent}
+                    collapsible
+                    onResize={(size) => {
+                      if (size > topBarMaxPercent && topBarPanelRef.current) {
+                        topBarPanelRef.current.resize(topBarMaxPercent);
+                        setIsTopBarVisible(true);
+                        return;
+                      }
+                      setIsTopBarVisible(size > 2);
+                    }}
+                  >
+                    {isTopBarVisible && (
+                      <TopBar
+                        selectedSet={selectedSet}
+                        onSetChange={setSelectedSet}
+                        orgName={orgData?.name}
+                        orgLogo={orgData?.imageUrl ?? undefined}
+                      />
+                    )}
+                  </ResizablePanel>
+
+                  <ResizableHandle withHandle />
+
+                  <ResizablePanel
+                    defaultSize={teamPanelExpanded ? 80 : 83}
+                    minSize={20}
+                  >
+                    <div className="h-full overflow-hidden flex flex-col">
+                      <main
+                        className="flex-1 overflow-auto"
+                        style={{
+                          padding: "40px",
+                          backgroundColor: "rgb(var(--color-bg-secondary))",
+                        }}
+                      >
+                        <Outlet />
+                      </main>
+                    </div>
+                  </ResizablePanel>
+
+                  <ResizableHandle withHandle />
+
+                  <ResizablePanel
+                    ref={bottomPanelRef}
+                    defaultSize={teamPanelExpanded ? 40 : 7}
+                    minSize={0}
+                    maxSize={50}
+                    onResize={(size) => {
+                      const expanded = size > 12;
+                      setTeamPanelExpanded(expanded);
+                    }}
+                  >
+                    <TeamScores
+                      isExpanded={teamPanelExpanded}
+                      onToggle={handleTeamPanelToggle}
+                    />
+                  </ResizablePanel>
+                </ResizablePanelGroup>
+              </ResizablePanel>
+            </ResizablePanelGroup>
+
+            <StatsModal
+              isOpen={statsPanelOpen}
+              onClose={() => setStatsPanelOpen(false)}
+            />
+            <ThemeModal
+              isOpen={themePanelOpen}
+              onClose={() => setThemePanelOpen(false)}
+              activeTheme={currentTheme}
+              onThemeApply={applyTheme}
+            />
+          </>
+        )}
       </div>
     </InterfaceStateProvider>
   );

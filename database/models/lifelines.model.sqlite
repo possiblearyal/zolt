@@ -1,0 +1,40 @@
+-- Lifelines master table: defines all available lifelines
+-- Each lifeline has a slug (code identifier) and displayName (UI label)
+-- Organizers can add new lifelines; logic is implemented in code
+CREATE TABLE IF NOT EXISTS lifelines (
+  id TEXT PRIMARY KEY,
+  slug TEXT UNIQUE NOT NULL,
+  -- e.g., "fiftyFifty", "doublePoints", "triplePoints"
+  displayName TEXT NOT NULL,
+  -- e.g., "50/50", "Double Points", "Triple Points"
+  description TEXT,
+  -- Optional description of what this lifeline does
+  isEnabled INTEGER DEFAULT 1,
+  -- Whether this lifeline is available for use
+  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+-- Default lifelines seed
+INSERT
+  OR IGNORE INTO lifelines (id, slug, displayName, description, isEnabled)
+VALUES (
+    'lifeline-fifty-fifty',
+    'fiftyFifty',
+    '50/50',
+    'Eliminates half of the wrong answers',
+    1
+  ),
+  (
+    'lifeline-double-points',
+    'doublePoints',
+    'Double Points',
+    'Doubles the points for this question',
+    1
+  ),
+  (
+    'lifeline-second-attempt',
+    'secondAttempt',
+    'Second Attempt',
+    'Allows a second try if first answer is wrong',
+    1
+  );

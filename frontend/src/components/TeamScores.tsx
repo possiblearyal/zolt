@@ -1,40 +1,244 @@
-import {
-  ChevronUp,
-  ChevronDown,
-  Trophy,
-  TrendingUp,
-  Award,
-} from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { ChevronUp, ChevronDown, Trophy, GripVertical } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-
-interface Team {
-  id: string;
-  name: string;
-  score: number;
-  rank: number;
-  trend: "up" | "down" | "same";
-  isWinner?: boolean;
-}
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  horizontalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { toast } from "sonner";
+import type { TeamRecord } from "@/types/teams";
 
 interface TeamScoresProps {
   isExpanded: boolean;
   onToggle: () => void;
+  isMatchActive?: boolean;
 }
 
-export function TeamScores({ isExpanded, onToggle }: TeamScoresProps) {
-  const teams: Team[] = [
-    {
-      id: "1",
-      name: "Dhaulagiri",
-      rank: 1,
-      score: 40,
-      trend: "up",
-      isWinner: true,
-    },
-    { id: "2", name: "Annapurna", rank: 2, score: 35, trend: "up" },
-    { id: "3", name: "Manaslu", rank: 3, score: 10, trend: "down" },
-    { id: "4", name: "Sagarmatha", rank: 4, score: 5, trend: "same" },
-  ];
+interface SortableTeamCardProps {
+  team: TeamRecord;
+  index: number;
+  isMatchActive: boolean;
+  onNavigate: (slug: string) => void;
+}
+
+function SortableTeamCard({
+  team,
+  index,
+  isMatchActive,
+  onNavigate,
+}: SortableTeamCardProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+    isOver,
+  } = useSortable({ id: team.id });
+
+  const handleClick = () => {
+    if (isMatchActive) {
+      toast("Navigate to team?", {
+        description: `This will open ${team.name}'s settings page.`,
+        action: {
+          label: "Go",
+          onClick: () => onNavigate(team.slug),
+        },
+        cancel: {
+          label: "Cancel",
+          onClick: () => {},
+        },
+      });
+    } else {
+      onNavigate(team.slug);
+    }
+  };
+
+  return (
+    <div className="relative">
+      {isOver && (
+        <div
+          className="absolute top-0 bottom-0 w-1 -left-3 rounded-full"
+          style={{ backgroundColor: "rgb(var(--color-primary))" }}
+        />
+      )}
+
+      <motion.div
+        ref={setNodeRef}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.05 }}
+        className="rounded-xl p-4 min-w-40 h-fit relative border shrink-0 cursor-pointer group"
+        style={{
+          borderColor: isDragging
+            ? "rgb(var(--color-primary))"
+            : "rgb(var(--color-card-border))",
+          backgroundColor: "rgb(var(--color-card-bg))",
+          transform: CSS.Transform.toString(transform),
+          transition,
+          zIndex: isDragging ? 50 : undefined,
+          opacity: isDragging ? 0.5 : 1,
+          boxShadow: isDragging
+            ? "0 10px 25px -5px rgb(var(--color-primary) / 0.3)"
+            : undefined,
+        }}
+        onClick={handleClick}
+        {...attributes}
+      >
+        <div
+          {...listeners}
+          className="absolute top-2 left-2 p-1 rounded cursor-grab opacity-0 group-hover:opacity-100 transition-opacity"
+          style={{
+            color: "rgb(var(--color-text-muted))",
+            backgroundColor: "rgb(var(--color-bg-hover))",
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <GripVertical size={14} />
+        </div>
+
+        <div
+          className="absolute top-2 right-2 text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center"
+          style={{
+            backgroundColor: "rgb(var(--color-bg-tertiary))",
+            color: "rgb(var(--color-text-secondary))",
+          }}
+        >
+          #{index + 1}
+        </div>
+
+        <div className="flex flex-col items-center mt-4">
+          <div
+            className="w-16 h-16 rounded-full flex items-center justify-center overflow-hidden border-2 mb-3"
+            style={{
+              borderColor: "rgb(var(--color-border))",
+              backgroundColor: "rgb(var(--color-bg-tertiary))",
+            }}
+          >
+            {team.logoUrl ? (
+              <img
+                src={team.logoUrl}
+                alt={team.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span
+                className="text-2xl font-bold"
+                style={{ color: "rgb(var(--color-text-muted))" }}
+              >
+                #{index + 1}
+              </span>
+            )}
+          </div>
+
+          <h4
+            className="font-medium text-center truncate max-w-full"
+            style={{ color: "rgb(var(--color-text-primary))" }}
+          >
+            {team.name}
+          </h4>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+export function TeamScores({
+  isExpanded,
+  onToggle,
+  isMatchActive = false,
+}: TeamScoresProps) {
+  const [teams, setTeams] = useState<TeamRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const loadTeams = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const data = await window.teamsApi?.list();
+      setTeams(data ?? []);
+    } catch (err) {
+      console.error("Failed to load teams", err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadTeams();
+  }, [loadTeams]);
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const performReorder = async () => {
+        const oldIndex = teams.findIndex((t) => t.id === active.id);
+        const newIndex = teams.findIndex((t) => t.id === over.id);
+        const newOrder = arrayMove(teams, oldIndex, newIndex);
+
+        setTeams(newOrder);
+
+        try {
+          await window.teamsApi?.reorder(newOrder.map((t) => t.id));
+          toast.success("Team order updated");
+        } catch (err) {
+          console.error("Failed to reorder teams", err);
+          toast.error("Failed to save team order");
+          loadTeams();
+        }
+      };
+
+      if (isMatchActive) {
+        toast("Reorder teams?", {
+          description: "This will change the playing order.",
+          action: {
+            label: "Confirm",
+            onClick: performReorder,
+          },
+          cancel: {
+            label: "Cancel",
+            onClick: () => loadTeams(), 
+          },
+        });
+        const oldIndex = teams.findIndex((t) => t.id === active.id);
+        const newIndex = teams.findIndex((t) => t.id === over.id);
+        setTeams(arrayMove(teams, oldIndex, newIndex));
+      } else {
+        await performReorder();
+      }
+    }
+  };
+
+  const handleNavigate = (slug: string) => {
+    navigate(`/team/${slug}`);
+  };
 
   return (
     <div
@@ -58,12 +262,12 @@ export function TeamScores({ isExpanded, onToggle }: TeamScoresProps) {
           >
             Team Scores
           </span>
-          {isExpanded && (
+          {isExpanded && !isLoading && (
             <span
               className="text-sm"
               style={{ color: "rgb(var(--color-text-secondary))" }}
             >
-              {teams.length} teams competing
+              {teams.length} team{teams.length !== 1 ? "s" : ""}
             </span>
           )}
         </div>
@@ -84,108 +288,42 @@ export function TeamScores({ isExpanded, onToggle }: TeamScoresProps) {
               paddingBottom: "20px",
             }}
           >
-            <div className="flex gap-4 h-full items-center">
-              {teams.map((team, index) => (
-                <motion.div
-                  key={team.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="rounded-xl p-4 min-w-[200px] h-fit relative border shrink-0"
-                  style={{
-                    borderColor: "rgb(var(--color-card-border))",
-                    backgroundColor: "rgb(var(--color-card-bg))",
-                  }}
+            {isLoading ? (
+              <div className="flex items-center justify-center h-full">
+                <p style={{ color: "rgb(var(--color-text-secondary))" }}>
+                  Loading teams...
+                </p>
+              </div>
+            ) : teams.length === 0 ? (
+              <div className="flex items-center justify-center h-full">
+                <p style={{ color: "rgb(var(--color-text-muted))" }}>
+                  No teams yet. Create teams from the Teams page.
+                </p>
+              </div>
+            ) : (
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={teams.map((t) => t.id)}
+                  strategy={horizontalListSortingStrategy}
                 >
-                  <div
-                    className="absolute top-3 right-3 text-xs font-medium"
-                    style={{ color: "rgb(var(--color-text-muted))" }}
-                  >
-                    #{team.rank}
+                  <div className="flex gap-4 h-full items-center">
+                    {teams.map((team, index) => (
+                      <SortableTeamCard
+                        key={team.id}
+                        team={team}
+                        index={index}
+                        isMatchActive={isMatchActive}
+                        onNavigate={handleNavigate}
+                      />
+                    ))}
                   </div>
-
-                  {team.isWinner && (
-                    <div
-                      className="absolute -top-3 -left-3 flex items-center gap-1 px-2 py-1 rounded-full border shadow-sm"
-                      style={{
-                        backgroundColor: "rgb(var(--color-bg-elevated))",
-                        borderColor: "rgb(var(--color-warning))",
-                        color: "rgb(var(--color-warning))",
-                      }}
-                    >
-                      <Award size={14} />
-                      <span className="text-xs font-semibold">Winning</span>
-                    </div>
-                  )}
-
-                  <div className="mt-2 mb-3">
-                    <h4
-                      className="font-medium truncate"
-                      style={{ color: "rgb(var(--color-text-primary))" }}
-                    >
-                      {team.name}
-                    </h4>
-                  </div>
-
-                  <div className="flex items-center justify-center mb-2">
-                    <div
-                      className="relative flex items-center justify-center rounded-full border-4"
-                      style={{
-                        width: "70px",
-                        height: "70px",
-                        borderColor: team.isWinner
-                          ? "rgb(var(--color-warning))"
-                          : "rgb(var(--color-border))",
-                      }}
-                    >
-                      <span
-                        className="text-2xl font-bold"
-                        style={{
-                          color: team.isWinner
-                            ? "rgb(var(--color-warning))"
-                            : "rgb(var(--color-text-secondary))",
-                        }}
-                      >
-                        {team.score}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-center gap-1 text-xs">
-                    {team.trend === "up" && (
-                      <>
-                        <TrendingUp
-                          size={14}
-                          style={{ color: "rgb(var(--color-success))" }}
-                        />
-                        <span style={{ color: "rgb(var(--color-success))" }}>
-                          Rising
-                        </span>
-                      </>
-                    )}
-                    {team.trend === "down" && (
-                      <>
-                        <TrendingUp
-                          size={14}
-                          className="rotate-180"
-                          style={{ color: "rgb(var(--color-destructive))" }}
-                        />
-                        <span
-                          style={{ color: "rgb(var(--color-destructive))" }}
-                        >
-                          Falling
-                        </span>
-                      </>
-                    )}
-                    {team.trend === "same" && (
-                      <span style={{ color: "rgb(var(--color-text-muted))" }}>
-                        Stable
-                      </span>
-                    )}
-                  </div>
-                </motion.div>
-              ))}
-            </div>
+                </SortableContext>
+              </DndContext>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

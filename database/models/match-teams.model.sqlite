@@ -1,23 +1,43 @@
+-- Match Teams: per-match team state with inherited configuration
+-- Created when a match starts; remainingPasses, remainingHints and lifelines can change during match
 CREATE TABLE IF NOT EXISTS match_teams (
   id TEXT PRIMARY KEY,
   matchId TEXT NOT NULL,
   teamId TEXT NOT NULL,
   displayName TEXT NOT NULL,
+  -- Copied from teams.name at match start
+  logoUrl TEXT,
+  -- Copied from teams.logoUrl at match start
   score INTEGER DEFAULT 0,
   standing INTEGER,
-  currentTurn BOOLEAN DEFAULT 0,
-  gameplayState JSON NOT NULL,
+  -- Current rank in the match
+  displayOrder INTEGER DEFAULT 0,
+  -- Play order (can be reordered during match)
+  currentTurn INTEGER DEFAULT 0,
+  -- 1 if it's this team's turn
+  remainingPasses INTEGER NOT NULL,
+  -- Inherited from team_config.maxPasses, decrements during match (-1 = infinite)
+  remainingHints INTEGER NOT NULL,
+  -- Inherited from team_config.maxHints, decrements during match (-1 = infinite)
   createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (matchId) REFERENCES matches(id),
-  FOREIGN KEY (teamId) REFERENCES teams(id)
+  updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (matchId) REFERENCES matches(id) ON DELETE CASCADE,
+  FOREIGN KEY (teamId) REFERENCES teams(id) ON DELETE CASCADE
 );
-/* Example of gameplayState JSON:
- {
- "remainingPasses": 1,
- "lifelines": {
- "fiftyFifty": 1,
- "doublePoints": 0,
- "secondAttempt": 1
- }
- }
- */
+CREATE INDEX IF NOT EXISTS idx_match_teams_match ON match_teams(matchId);
+CREATE INDEX IF NOT EXISTS idx_match_teams_team ON match_teams(teamId);
+-- Match Team Lifelines: per-match lifeline state
+-- Created when a match starts with counts from team_config_lifelines
+CREATE TABLE IF NOT EXISTS match_team_lifelines (
+  id TEXT PRIMARY KEY,
+  matchTeamId TEXT NOT NULL,
+  lifelineId TEXT NOT NULL,
+  remainingCount INTEGER NOT NULL,
+  -- Starts from team_config_lifelines.defaultCount
+  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (matchTeamId) REFERENCES match_teams(id) ON DELETE CASCADE,
+  FOREIGN KEY (lifelineId) REFERENCES lifelines(id) ON DELETE CASCADE,
+  UNIQUE(matchTeamId, lifelineId)
+);
+CREATE INDEX IF NOT EXISTS idx_match_team_lifelines_match_team ON match_team_lifelines(matchTeamId);

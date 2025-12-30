@@ -1,0 +1,61 @@
+-- Team Configuration: global defaults that all teams inherit when a match starts
+-- This is a single-row table storing defaults like maxPasses, maxHints
+-- Lifeline defaults are stored in team_config_lifelines
+CREATE TABLE IF NOT EXISTS team_config (
+  id TEXT PRIMARY KEY DEFAULT 'config-default',
+  maxPasses INTEGER DEFAULT 2,
+  -- Default number of passes each team gets per match (-1 = infinite)
+  maxHints INTEGER DEFAULT 3,
+  -- Default number of hints each team gets per match (-1 = infinite)
+  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+-- Ensure default config exists
+INSERT
+  OR IGNORE INTO team_config (id, maxPasses, maxHints)
+VALUES ('config-default', 2, 3);
+-- Team Config Lifelines: which lifelines are enabled and their default counts
+CREATE TABLE IF NOT EXISTS team_config_lifelines (
+  id TEXT PRIMARY KEY,
+  configId TEXT NOT NULL DEFAULT 'config-default',
+  lifelineId TEXT NOT NULL,
+  defaultCount INTEGER DEFAULT 1,
+  -- How many of this lifeline each team gets
+  isEnabled INTEGER DEFAULT 1,
+  -- Whether this lifeline is enabled for teams
+  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (configId) REFERENCES team_config(id) ON DELETE CASCADE,
+  FOREIGN KEY (lifelineId) REFERENCES lifelines(id) ON DELETE CASCADE,
+  UNIQUE(configId, lifelineId)
+);
+-- Default lifeline configuration
+INSERT
+  OR IGNORE INTO team_config_lifelines (
+    id,
+    configId,
+    lifelineId,
+    defaultCount,
+    isEnabled
+  )
+VALUES (
+    'tcl-fifty-fifty',
+    'config-default',
+    'lifeline-fifty-fifty',
+    1,
+    1
+  ),
+  (
+    'tcl-double-points',
+    'config-default',
+    'lifeline-double-points',
+    1,
+    1
+  ),
+  (
+    'tcl-second-attempt',
+    'config-default',
+    'lifeline-second-attempt',
+    1,
+    1
+  );

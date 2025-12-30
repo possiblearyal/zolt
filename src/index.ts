@@ -417,6 +417,461 @@ app.whenReady().then(() => {
     }
   });
 
+  ipcMain.handle("lifelines:list", () => {
+    try {
+      const db = dbInstance ?? getDatabase();
+      const rows = db
+        .prepare(`SELECT * FROM lifelines ORDER BY createdAt ASC`)
+        .all();
+      return rows ?? [];
+    } catch (err) {
+      console.error("lifelines:list failed", err);
+      throw err;
+    }
+  });
+
+  ipcMain.handle("lifelines:get", (_event, id: string) => {
+    try {
+      const db = dbInstance ?? getDatabase();
+      const row = db.prepare(`SELECT * FROM lifelines WHERE id = ?`).get(id);
+      return row ?? null;
+    } catch (err) {
+      console.error("lifelines:get failed", err);
+      throw err;
+    }
+  });
+
+  ipcMain.handle(
+    "lifelines:create",
+    (
+      _event,
+      payload: {
+        slug: string;
+        displayName: string;
+        description?: string;
+        isEnabled?: boolean;
+      }
+    ) => {
+      const { slug, displayName, description, isEnabled } = payload;
+      if (!slug || !displayName) {
+        throw new Error("slug and displayName are required");
+      }
+      const now = new Date().toISOString();
+      const id = `lifeline-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      try {
+        const db = dbInstance ?? getDatabase();
+        db.prepare(
+          `INSERT INTO lifelines (id, slug, displayName, description, isEnabled, createdAt, updatedAt)
+           VALUES (@id, @slug, @displayName, @description, @isEnabled, @createdAt, @updatedAt)`
+        ).run({
+          id,
+          slug,
+          displayName,
+          description: description ?? null,
+          isEnabled: isEnabled !== false ? 1 : 0,
+          createdAt: now,
+          updatedAt: now,
+        });
+        const saved = db
+          .prepare(`SELECT * FROM lifelines WHERE id = ?`)
+          .get(id);
+        return saved;
+      } catch (err) {
+        console.error("lifelines:create failed", err);
+        throw err;
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "lifelines:update",
+    (
+      _event,
+      payload: {
+        id: string;
+        slug?: string;
+        displayName?: string;
+        description?: string;
+        isEnabled?: boolean;
+      }
+    ) => {
+      const { id, slug, displayName, description, isEnabled } = payload;
+      if (!id) {
+        throw new Error("id is required");
+      }
+      try {
+        const db = dbInstance ?? getDatabase();
+        const updates: string[] = [];
+        const params: Record<string, unknown> = {
+          id,
+          updatedAt: new Date().toISOString(),
+        };
+
+        if (slug !== undefined) {
+          updates.push("slug = @slug");
+          params.slug = slug;
+        }
+        if (displayName !== undefined) {
+          updates.push("displayName = @displayName");
+          params.displayName = displayName;
+        }
+        if (description !== undefined) {
+          updates.push("description = @description");
+          params.description = description;
+        }
+        if (isEnabled !== undefined) {
+          updates.push("isEnabled = @isEnabled");
+          params.isEnabled = isEnabled ? 1 : 0;
+        }
+
+        if (updates.length > 0) {
+          updates.push("updatedAt = @updatedAt");
+          db.prepare(
+            `UPDATE lifelines SET ${updates.join(", ")} WHERE id = @id`
+          ).run(params);
+        }
+
+        const saved = db
+          .prepare(`SELECT * FROM lifelines WHERE id = ?`)
+          .get(id);
+        return saved;
+      } catch (err) {
+        console.error("lifelines:update failed", err);
+        throw err;
+      }
+    }
+  );
+
+  ipcMain.handle("lifelines:delete", (_event, id: string) => {
+    try {
+      const db = dbInstance ?? getDatabase();
+      db.prepare(`DELETE FROM lifelines WHERE id = ?`).run(id);
+      return { success: true };
+    } catch (err) {
+      console.error("lifelines:delete failed", err);
+      throw err;
+    }
+  });
+
+
+  ipcMain.handle("teamConfig:get", () => {
+    try {
+      const db = dbInstance ?? getDatabase();
+      const config = db
+        .prepare(`SELECT * FROM team_config WHERE id = 'config-default'`)
+        .get();
+      const lifelines = db
+        .prepare(
+          `SELECT tcl.*, l.slug, l.displayName, l.description as lifelineDescription
+           FROM team_config_lifelines tcl
+           JOIN lifelines l ON tcl.lifelineId = l.id
+           WHERE tcl.configId = 'config-default'
+           ORDER BY l.createdAt ASC`
+        )
+        .all();
+      return { config, lifelines };
+    } catch (err) {
+      console.error("teamConfig:get failed", err);
+      throw err;
+    }
+  });
+
+  ipcMain.handle(
+    "teamConfig:update",
+    (_event, payload: { maxPasses?: number; maxHints?: number }) => {
+      const { maxPasses, maxHints } = payload;
+      try {
+        const db = dbInstance ?? getDatabase();
+        const updates: string[] = [];
+        const params: Record<string, unknown> = {
+          id: "config-default",
+          updatedAt: new Date().toISOString(),
+        };
+
+        if (maxPasses !== undefined) {
+          updates.push("maxPasses = @maxPasses");
+          params.maxPasses = maxPasses;
+        }
+        if (maxHints !== undefined) {
+          updates.push("maxHints = @maxHints");
+          params.maxHints = maxHints;
+        }
+
+        if (updates.length > 0) {
+          updates.push("updatedAt = @updatedAt");
+          db.prepare(
+            `UPDATE team_config SET ${updates.join(", ")} WHERE id = @id`
+          ).run(params);
+        }
+
+        const saved = db
+          .prepare(`SELECT * FROM team_config WHERE id = 'config-default'`)
+          .get();
+        return saved;
+      } catch (err) {
+        console.error("teamConfig:update failed", err);
+        throw err;
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "teamConfig:updateLifeline",
+    (
+      _event,
+      payload: {
+        lifelineId: string;
+        defaultCount?: number;
+        isEnabled?: boolean;
+      }
+    ) => {
+      const { lifelineId, defaultCount, isEnabled } = payload;
+      if (!lifelineId) {
+        throw new Error("lifelineId is required");
+      }
+      try {
+        const db = dbInstance ?? getDatabase();
+        const now = new Date().toISOString();
+
+        const existing = db
+          .prepare(
+            `SELECT * FROM team_config_lifelines WHERE configId = 'config-default' AND lifelineId = ?`
+          )
+          .get(lifelineId);
+
+        if (existing) {
+          const updates: string[] = [];
+          const params: Record<string, unknown> = {
+            configId: "config-default",
+            lifelineId,
+            updatedAt: now,
+          };
+
+          if (defaultCount !== undefined) {
+            updates.push("defaultCount = @defaultCount");
+            params.defaultCount = defaultCount;
+          }
+          if (isEnabled !== undefined) {
+            updates.push("isEnabled = @isEnabled");
+            params.isEnabled = isEnabled ? 1 : 0;
+          }
+
+          if (updates.length > 0) {
+            updates.push("updatedAt = @updatedAt");
+            db.prepare(
+              `UPDATE team_config_lifelines SET ${updates.join(", ")} WHERE configId = @configId AND lifelineId = @lifelineId`
+            ).run(params);
+          }
+        } else {
+          const id = `tcl-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+          db.prepare(
+            `INSERT INTO team_config_lifelines (id, configId, lifelineId, defaultCount, isEnabled, createdAt, updatedAt)
+             VALUES (@id, @configId, @lifelineId, @defaultCount, @isEnabled, @createdAt, @updatedAt)`
+          ).run({
+            id,
+            configId: "config-default",
+            lifelineId,
+            defaultCount: defaultCount ?? 1,
+            isEnabled: isEnabled !== false ? 1 : 0,
+            createdAt: now,
+            updatedAt: now,
+          });
+        }
+
+        const saved = db
+          .prepare(
+            `SELECT tcl.*, l.slug, l.displayName
+             FROM team_config_lifelines tcl
+             JOIN lifelines l ON tcl.lifelineId = l.id
+             WHERE tcl.configId = 'config-default' AND tcl.lifelineId = ?`
+          )
+          .get(lifelineId);
+        return saved;
+      } catch (err) {
+        console.error("teamConfig:updateLifeline failed", err);
+        throw err;
+      }
+    }
+  );
+
+
+  ipcMain.handle("teams:list", () => {
+    try {
+      const db = dbInstance ?? getDatabase();
+      const rows = db
+        .prepare(`SELECT * FROM teams ORDER BY displayOrder ASC, createdAt ASC`)
+        .all();
+      return rows ?? [];
+    } catch (err) {
+      console.error("teams:list failed", err);
+      throw err;
+    }
+  });
+
+  ipcMain.handle("teams:get", (_event, idOrSlug: string) => {
+    try {
+      const db = dbInstance ?? getDatabase();
+      const row = db
+        .prepare(`SELECT * FROM teams WHERE id = ? OR slug = ?`)
+        .get(idOrSlug, idOrSlug);
+      return row ?? null;
+    } catch (err) {
+      console.error("teams:get failed", err);
+      throw err;
+    }
+  });
+
+  ipcMain.handle(
+    "teams:create",
+    (_event, payload: { name: string; logoUrl?: string }) => {
+      const { name, logoUrl } = payload;
+      if (!name) {
+        throw new Error("name is required");
+      }
+      const now = new Date().toISOString();
+      const id = `team-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      const baseSlug = name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+      try {
+        const db = dbInstance ?? getDatabase();
+
+        let slug = baseSlug || "team";
+        let counter = 1;
+        while (
+          db.prepare(`SELECT 1 FROM teams WHERE slug = ?`).get(slug) !==
+          undefined
+        ) {
+          slug = `${baseSlug}-${counter}`;
+          counter++;
+        }
+
+        const maxOrder = db
+          .prepare(`SELECT MAX(displayOrder) as maxOrder FROM teams`)
+          .get() as { maxOrder: number | null };
+        const displayOrder = (maxOrder?.maxOrder ?? -1) + 1;
+
+        db.prepare(
+          `INSERT INTO teams (id, name, slug, logoUrl, displayOrder, createdAt, updatedAt)
+           VALUES (@id, @name, @slug, @logoUrl, @displayOrder, @createdAt, @updatedAt)`
+        ).run({
+          id,
+          name,
+          slug,
+          logoUrl: logoUrl ?? null,
+          displayOrder,
+          createdAt: now,
+          updatedAt: now,
+        });
+        const saved = db.prepare(`SELECT * FROM teams WHERE id = ?`).get(id);
+        return saved;
+      } catch (err) {
+        console.error("teams:create failed", err);
+        throw err;
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "teams:update",
+    (
+      _event,
+      payload: {
+        id: string;
+        name?: string;
+        logoUrl?: string;
+        displayOrder?: number;
+      }
+    ) => {
+      const { id, name, logoUrl, displayOrder } = payload;
+      if (!id) {
+        throw new Error("id is required");
+      }
+      try {
+        const db = dbInstance ?? getDatabase();
+        const updates: string[] = [];
+        const params: Record<string, unknown> = {
+          id,
+          updatedAt: new Date().toISOString(),
+        };
+
+        if (name !== undefined) {
+          updates.push("name = @name");
+          params.name = name;
+          const baseSlug = name
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-|-$/g, "");
+          let slug = baseSlug || "team";
+          let counter = 1;
+          while (
+            db
+              .prepare(`SELECT 1 FROM teams WHERE slug = ? AND id != ?`)
+              .get(slug, id) !== undefined
+          ) {
+            slug = `${baseSlug}-${counter}`;
+            counter++;
+          }
+          updates.push("slug = @slug");
+          params.slug = slug;
+        }
+        if (logoUrl !== undefined) {
+          updates.push("logoUrl = @logoUrl");
+          params.logoUrl = logoUrl;
+        }
+        if (displayOrder !== undefined) {
+          updates.push("displayOrder = @displayOrder");
+          params.displayOrder = displayOrder;
+        }
+
+        if (updates.length > 0) {
+          updates.push("updatedAt = @updatedAt");
+          db.prepare(
+            `UPDATE teams SET ${updates.join(", ")} WHERE id = @id`
+          ).run(params);
+        }
+
+        const saved = db.prepare(`SELECT * FROM teams WHERE id = ?`).get(id);
+        return saved;
+      } catch (err) {
+        console.error("teams:update failed", err);
+        throw err;
+      }
+    }
+  );
+
+  ipcMain.handle("teams:delete", (_event, id: string) => {
+    try {
+      const db = dbInstance ?? getDatabase();
+      db.prepare(`DELETE FROM teams WHERE id = ?`).run(id);
+      return { success: true };
+    } catch (err) {
+      console.error("teams:delete failed", err);
+      throw err;
+    }
+  });
+
+  ipcMain.handle("teams:reorder", (_event, orderedIds: string[]) => {
+    try {
+      const db = dbInstance ?? getDatabase();
+      const now = new Date().toISOString();
+      const stmt = db.prepare(
+        `UPDATE teams SET displayOrder = @displayOrder, updatedAt = @updatedAt WHERE id = @id`
+      );
+      orderedIds.forEach((id, index) => {
+        stmt.run({ id, displayOrder: index, updatedAt: now });
+      });
+      const rows = db
+        .prepare(`SELECT * FROM teams ORDER BY displayOrder ASC`)
+        .all();
+      return rows;
+    } catch (err) {
+      console.error("teams:reorder failed", err);
+      throw err;
+    }
+  });
+
   createWindow();
 
   app.on("activate", () => {

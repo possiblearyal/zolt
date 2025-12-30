@@ -1,18 +1,16 @@
+-- Teams table: stores team metadata
+-- Configuration is inherited from team_config when match starts
 CREATE TABLE IF NOT EXISTS teams (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
+  slug TEXT UNIQUE NOT NULL,
+  -- URL-friendly identifier, e.g., "dhaulagiri"
   logoUrl TEXT,
-  configuration JSON NOT NULL,
+  -- Team logo image URL
+  displayOrder INTEGER DEFAULT 0,
+  -- Order for display in TeamScores panel
   createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
   updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
 );
-/* Example of configuration JSON:
- {
- "maxPasses": 2,
- "lifelines": {
- "fiftyFifty": 1,
- "doublePoints": 1,
- "secondAttempt": 1
- }
- }
- */
+CREATE INDEX IF NOT EXISTS idx_teams_slug ON teams(slug);
+CREATE INDEX IF NOT EXISTS idx_teams_display_order ON teams(displayOrder);

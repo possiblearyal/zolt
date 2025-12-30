@@ -165,6 +165,9 @@ export function Layout() {
 
   const activeTab = useMemo(() => {
     const segments = location.pathname.split("/").filter(Boolean);
+    if (segments[0] === "team") {
+      return "teams";
+    }
     const normalizedPath = segments.length === 0 ? "/" : `/${segments[0]}`;
     return (
       Object.entries(TAB_TO_PATH).find(

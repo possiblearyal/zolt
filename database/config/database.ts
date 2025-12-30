@@ -47,6 +47,37 @@ function createConnection(dbPath: string): Database.Database {
 
 function createTables(db: Database.Database) {
   db.exec(`
+    CREATE TABLE IF NOT EXISTS lifelines (
+      id TEXT PRIMARY KEY,
+      slug TEXT UNIQUE NOT NULL,
+      displayName TEXT NOT NULL,
+      description TEXT,
+      isEnabled INTEGER DEFAULT 1,
+      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS team_config (
+      id TEXT PRIMARY KEY DEFAULT 'config-default',
+      maxPasses INTEGER DEFAULT 2,
+      maxHints INTEGER DEFAULT 3,
+      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS team_config_lifelines (
+      id TEXT PRIMARY KEY,
+      configId TEXT NOT NULL DEFAULT 'config-default',
+      lifelineId TEXT NOT NULL,
+      defaultCount INTEGER DEFAULT 1,
+      isEnabled INTEGER DEFAULT 1,
+      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (configId) REFERENCES team_config(id) ON DELETE CASCADE,
+      FOREIGN KEY (lifelineId) REFERENCES lifelines(id) ON DELETE CASCADE,
+      UNIQUE(configId, lifelineId)
+    );
+
     CREATE TABLE IF NOT EXISTS sets (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
@@ -59,11 +90,15 @@ function createTables(db: Database.Database) {
     CREATE TABLE IF NOT EXISTS teams (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
+      slug TEXT UNIQUE NOT NULL,
       logoUrl TEXT,
-      configuration JSON NOT NULL,
+      displayOrder INTEGER DEFAULT 0,
       createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
       updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE INDEX IF NOT EXISTS idx_teams_slug ON teams(slug);
+    CREATE INDEX IF NOT EXISTS idx_teams_display_order ON teams(displayOrder);
 
     CREATE TABLE IF NOT EXISTS round_categories (
       id TEXT PRIMARY KEY,
@@ -153,14 +188,35 @@ function createTables(db: Database.Database) {
       matchId TEXT NOT NULL,
       teamId TEXT NOT NULL,
       displayName TEXT NOT NULL,
+      logoUrl TEXT,
       score INTEGER DEFAULT 0,
       standing INTEGER,
-      currentTurn BOOLEAN DEFAULT 0,
-      gameplayState JSON NOT NULL,
+      displayOrder INTEGER DEFAULT 0,
+      currentTurn INTEGER DEFAULT 0,
+      remainingPasses INTEGER NOT NULL,
+      remainingHints INTEGER NOT NULL,
       createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (matchId) REFERENCES matches(id),
-      FOREIGN KEY (teamId) REFERENCES teams(id)
+      updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (matchId) REFERENCES matches(id) ON DELETE CASCADE,
+      FOREIGN KEY (teamId) REFERENCES teams(id) ON DELETE CASCADE
     );
+
+    CREATE INDEX IF NOT EXISTS idx_match_teams_match ON match_teams(matchId);
+    CREATE INDEX IF NOT EXISTS idx_match_teams_team ON match_teams(teamId);
+
+    CREATE TABLE IF NOT EXISTS match_team_lifelines (
+      id TEXT PRIMARY KEY,
+      matchTeamId TEXT NOT NULL,
+      lifelineId TEXT NOT NULL,
+      remainingCount INTEGER NOT NULL,
+      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (matchTeamId) REFERENCES match_teams(id) ON DELETE CASCADE,
+      FOREIGN KEY (lifelineId) REFERENCES lifelines(id) ON DELETE CASCADE,
+      UNIQUE(matchTeamId, lifelineId)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_match_team_lifelines_match_team ON match_team_lifelines(matchTeamId);
 
     CREATE TABLE IF NOT EXISTS turns (
       id TEXT PRIMARY KEY,
@@ -225,6 +281,8 @@ function applySchemasFromModelFiles(db: Database.Database): boolean {
   if (!fs.existsSync(modelsDir)) return false;
 
   const preferredOrder = [
+    "lifelines.model.sqlite",
+    "team-config.model.sqlite",
     "sets.model.sqlite",
     "teams.model.sqlite",
     "round-categories.model.sqlite",

@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { MdOutlineAbc, MdOutlineDescription } from "react-icons/md";
 import InputField from "@/components/shared/InputField";
 
-export default function New() {
+export default function NewSet() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [isSaving, setIsSaving] = useState(false);

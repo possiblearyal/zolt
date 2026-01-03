@@ -338,9 +338,8 @@ function LifelineCard({
               name="lifelineName"
               value={name}
               onChange={(e) => handleNameChange(e.target.value)}
-              className={`text-sm font-medium truncate focus:outline-none`}
+              className={`text-sm font-medium truncate focus:outline-none bg-transparent`}
               style={{
-                backgroundColor: "rgb(var(--color-bg-primary))",
                 color: "rgb(var(--color-text-primary))",
               }}
             />

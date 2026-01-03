@@ -120,3 +120,41 @@ contextBridge.exposeInMainWorld("teamsApi", {
     return ipcRenderer.invoke("teams:reorder", orderedIds);
   },
 });
+
+contextBridge.exposeInMainWorld("roundCategoriesApi", {
+  list: async () => {
+    console.log("[preload.cjs] roundCategories:list invoked");
+    return ipcRenderer.invoke("roundCategories:list");
+  },
+  get: async (id) => {
+    console.log("[preload.cjs] roundCategories:get invoked", id);
+    return ipcRenderer.invoke("roundCategories:get", id);
+  },
+});
+
+contextBridge.exposeInMainWorld("roundsApi", {
+  list: async (setId) => {
+    console.log("[preload.cjs] rounds:list invoked", setId);
+    return ipcRenderer.invoke("rounds:list", setId);
+  },
+  get: async (id) => {
+    console.log("[preload.cjs] rounds:get invoked", id);
+    return ipcRenderer.invoke("rounds:get", id);
+  },
+  create: async (payload) => {
+    console.log("[preload.cjs] rounds:create invoked", payload);
+    return ipcRenderer.invoke("rounds:create", payload);
+  },
+  update: async (payload) => {
+    console.log("[preload.cjs] rounds:update invoked", payload);
+    return ipcRenderer.invoke("rounds:update", payload);
+  },
+  delete: async (id) => {
+    console.log("[preload.cjs] rounds:delete invoked", id);
+    return ipcRenderer.invoke("rounds:delete", id);
+  },
+  reorder: async (payload) => {
+    console.log("[preload.cjs] rounds:reorder invoked", payload);
+    return ipcRenderer.invoke("rounds:reorder", payload);
+  },
+});

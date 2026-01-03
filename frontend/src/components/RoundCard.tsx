@@ -16,8 +16,6 @@ interface Round {
   id: string;
   title: string;
   type: string;
-  typeColor: string;
-  typeBg: string;
   questions: number;
   duration: number;
 }
@@ -99,10 +97,10 @@ export function RoundCard({
             </h3>
             <div className="flex items-center gap-3 flex-wrap">
               <span
-                className="px-3 py-1 rounded-lg text-sm"
+                className="px-3 py-1 rounded-lg text-sm font-medium"
                 style={{
-                  backgroundColor: `${round.typeBg}`,
-                  color: round.typeColor,
+                  backgroundColor: "rgb(var(--color-primary) / 0.1)",
+                  color: "rgb(var(--color-primary))",
                 }}
               >
                 {round.type}

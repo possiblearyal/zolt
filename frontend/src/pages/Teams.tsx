@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Users, Plus, Settings } from "lucide-react";
 import type { TeamRecord } from "@/types/teams";
+import { SectionBanner } from "@/components/shared/SectionBanner";
 
 export function Teams() {
   const [teams, setTeams] = useState<TeamRecord[]>([]);
@@ -29,34 +30,24 @@ export function Teams() {
       className="flex flex-col gap-6"
       style={{ color: "rgb(var(--color-text-primary))" }}
     >
-      <div
-        className="py-8"
-        style={{
-          background:
-            "linear-gradient(135deg, rgb(var(--color-primary)) 0%, rgb(var(--color-accent)) 100%)",
-          color: "rgb(var(--color-primary-foreground, 255 255 255))",
-        }}
-      >
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-bold mb-2">Teams</h1>
-            <p style={{ opacity: 0.9 }}>
-              Manage teams participating in quiz matches.
-            </p>
-          </div>
+      <SectionBanner
+        title="Teams"
+        description="Manage teams participating in quiz matches."
+        action={
           <button
             onClick={() => navigate("/team/new")}
             className="px-4 py-2 rounded-lg cursor-pointer transition-colors flex items-center gap-2"
             style={{
-              backgroundColor: "rgb(var(--color-primary-foreground, 255 255 255))",
+              backgroundColor:
+                "rgb(var(--color-primary-foreground, 255 255 255))",
               color: "rgb(var(--color-primary))",
             }}
           >
             <Plus size={18} />
             Add Team
           </button>
-        </div>
-      </div>
+        }
+      />
 
       {isLoading ? (
         <div className="flex items-center justify-center py-12">

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { MdOutlineAbc, MdOutlineDescription } from "react-icons/md";
 import InputField from "@/components/shared/InputField";
+import { SectionBanner } from "@/components/shared/SectionBanner";
 
 export default function NewSet() {
   const [name, setName] = useState("");
@@ -40,28 +41,46 @@ export default function NewSet() {
   };
 
   return (
-    <section
+    <form
+      onSubmit={handleSubmit}
       className="flex flex-col gap-8"
       style={{ color: "rgb(var(--color-text-primary))" }}
     >
-      <div
-        className="py-8"
-        style={{
-          background:
-            "linear-gradient(135deg, rgb(var(--color-primary)) 0%, rgb(var(--color-accent)) 100%)",
-          color: "rgb(var(--color-primary-foreground, 255 255 255))",
-        }}
-      >
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-4xl font-bold mb-2">Create New Question Set</h1>
-          <p style={{ opacity: 0.9 }}>
-            Add a new question set to organize your quiz rounds and questions.
-          </p>
-        </div>
-      </div>
+      <SectionBanner
+        title="Create New Question Set"
+        description="Add a new question set to organize your quiz rounds and questions."
+        action={
+          <div className="flex justify-end gap-3 pt-4">
+            <button
+              type="button"
+              className="px-4 py-2 rounded-lg cursor-pointer transition-colors flex items-center gap-2"
+              style={{
+                backgroundColor:
+                  "rgb(var(--color-primary-foreground, 255 255 255))",
+                color: "rgb(var(--color-primary))",
+              }}
+              onClick={() => navigate(-1)}
+              disabled={isSaving}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 rounded-lg cursor-pointer transition-colors flex items-center gap-2"
+              style={{
+                backgroundColor:
+                  "rgb(var(--color-primary-foreground, 255 255 255))",
+                color: "rgb(var(--color-primary))",
+              }}
+              disabled={isSaving}
+            >
+              {isSaving ? "Creating..." : "Create Set"}
+            </button>
+          </div>
+        }
+      />
 
-      <form
-        onSubmit={handleSubmit}
+      <section
         className="space-y-6 p-6 rounded-2xl"
         style={{
           borderColor: "rgb(var(--color-border))",
@@ -95,34 +114,7 @@ export default function NewSet() {
             inputClassName="px-3 py-2"
           />
         </div>
-
-        <div className="flex justify-end gap-3 pt-4">
-          <button
-            type="button"
-            className="px-4 py-2 rounded-lg border cursor-pointer transition-colors"
-            style={{
-              borderColor: "rgb(var(--color-border))",
-              color: "rgb(var(--color-text-primary))",
-              backgroundColor: "rgb(var(--color-bg-secondary))",
-            }}
-            onClick={() => navigate(-1)}
-            disabled={isSaving}
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className="px-4 py-2 rounded-lg cursor-pointer transition-colors"
-            disabled={isSaving}
-            style={{
-              backgroundColor: "rgb(var(--color-primary))",
-              color: "rgb(var(--color-primary-foreground, 255 255 255))",
-            }}
-          >
-            {isSaving ? "Creating..." : "Create Set"}
-          </button>
-        </div>
-      </form>
-    </section>
+      </section>
+    </form>
   );
 }

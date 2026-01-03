@@ -553,7 +553,6 @@ app.whenReady().then(() => {
     }
   });
 
-
   ipcMain.handle("teamConfig:get", () => {
     try {
       const db = dbInstance ?? getDatabase();
@@ -693,7 +692,6 @@ app.whenReady().then(() => {
       }
     }
   );
-
 
   ipcMain.handle("teams:list", () => {
     try {
@@ -871,6 +869,353 @@ app.whenReady().then(() => {
       throw err;
     }
   });
+
+
+  ipcMain.handle("roundCategories:list", () => {
+    try {
+      const db = dbInstance ?? getDatabase();
+      const rows = db
+        .prepare(`SELECT * FROM round_categories ORDER BY name ASC`)
+        .all() as Record<string, unknown>[];
+      return rows.map((row) => ({
+        ...row,
+        defaultConfiguration:
+          typeof row.defaultConfiguration === "string"
+            ? JSON.parse(row.defaultConfiguration)
+            : row.defaultConfiguration,
+      }));
+    } catch (err) {
+      console.error("roundCategories:list failed", err);
+      throw err;
+    }
+  });
+
+  ipcMain.handle("roundCategories:get", (_event, id: string) => {
+    try {
+      const db = dbInstance ?? getDatabase();
+      const row = db
+        .prepare(`SELECT * FROM round_categories WHERE id = ?`)
+        .get(id) as Record<string, unknown> | undefined;
+      if (!row) return null;
+      return {
+        ...row,
+        defaultConfiguration:
+          typeof row.defaultConfiguration === "string"
+            ? JSON.parse(row.defaultConfiguration)
+            : row.defaultConfiguration,
+      };
+    } catch (err) {
+      console.error("roundCategories:get failed", err);
+      throw err;
+    }
+  });
+
+
+  ipcMain.handle("rounds:list", (_event, setId?: string) => {
+    try {
+      const db = dbInstance ?? getDatabase();
+      let query = `
+        SELECT r.*, rc.name as categoryName, rc.contentMode as categoryContentMode
+        FROM rounds r
+        LEFT JOIN round_categories rc ON r.categoryId = rc.id
+      `;
+      if (setId) {
+        query += ` WHERE r.setId = ? ORDER BY r.position ASC`;
+        const rows = db.prepare(query).all(setId) as Record<string, unknown>[];
+        return rows.map((row) => ({
+          ...row,
+          configuration:
+            typeof row.configuration === "string"
+              ? JSON.parse(row.configuration)
+              : row.configuration,
+          confirmationRequired: row.confirmationRequired === 1,
+        }));
+      }
+      query += ` ORDER BY r.setId, r.position ASC`;
+      const rows = db.prepare(query).all() as Record<string, unknown>[];
+      return rows.map((row) => ({
+        ...row,
+        configuration:
+          typeof row.configuration === "string"
+            ? JSON.parse(row.configuration)
+            : row.configuration,
+        confirmationRequired: row.confirmationRequired === 1,
+      }));
+    } catch (err) {
+      console.error("rounds:list failed", err);
+      throw err;
+    }
+  });
+
+  ipcMain.handle("rounds:get", (_event, id: string) => {
+    try {
+      const db = dbInstance ?? getDatabase();
+      const row = db
+        .prepare(
+          `
+        SELECT r.*, rc.name as categoryName, rc.contentMode as categoryContentMode
+        FROM rounds r
+        LEFT JOIN round_categories rc ON r.categoryId = rc.id
+        WHERE r.id = ?
+      `
+        )
+        .get(id) as Record<string, unknown> | undefined;
+      if (!row) return null;
+      return {
+        ...row,
+        configuration:
+          typeof row.configuration === "string"
+            ? JSON.parse(row.configuration)
+            : row.configuration,
+        confirmationRequired: row.confirmationRequired === 1,
+      };
+    } catch (err) {
+      console.error("rounds:get failed", err);
+      throw err;
+    }
+  });
+
+  ipcMain.handle(
+    "rounds:create",
+    (
+      _event,
+      payload: {
+        setId: string;
+        categoryId: string;
+        name: string;
+        description?: string;
+        configuration?: Record<string, unknown>;
+        confirmationRequired?: boolean;
+      }
+    ) => {
+      const {
+        setId,
+        categoryId,
+        name,
+        description,
+        configuration,
+        confirmationRequired,
+      } = payload;
+      try {
+        const db = dbInstance ?? getDatabase();
+
+        const category = db
+          .prepare(
+            `SELECT defaultConfiguration FROM round_categories WHERE id = ?`
+          )
+          .get(categoryId) as { defaultConfiguration: string } | undefined;
+
+        let defaultConfig = {};
+        if (category) {
+          defaultConfig =
+            typeof category.defaultConfiguration === "string"
+              ? JSON.parse(category.defaultConfiguration)
+              : category.defaultConfiguration;
+        }
+
+        const finalConfig = configuration
+          ? { ...defaultConfig, ...configuration }
+          : defaultConfig;
+
+        const maxPos = db
+          .prepare(`SELECT MAX(position) as maxPos FROM rounds WHERE setId = ?`)
+          .get(setId) as { maxPos: number | null };
+        const position = (maxPos?.maxPos ?? -1) + 1;
+
+        const id = `round_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        const now = new Date().toISOString();
+
+        db.prepare(
+          `INSERT INTO rounds (id, setId, categoryId, name, description, position, configuration, confirmationRequired, createdAt)
+           VALUES (@id, @setId, @categoryId, @name, @description, @position, @configuration, @confirmationRequired, @createdAt)`
+        ).run({
+          id,
+          setId,
+          categoryId,
+          name,
+          description: description ?? null,
+          position,
+          configuration: JSON.stringify(finalConfig),
+          confirmationRequired: confirmationRequired ? 1 : 0,
+          createdAt: now,
+        });
+
+        const saved = db
+          .prepare(
+            `
+          SELECT r.*, rc.name as categoryName, rc.contentMode as categoryContentMode
+          FROM rounds r
+          LEFT JOIN round_categories rc ON r.categoryId = rc.id
+          WHERE r.id = ?
+        `
+          )
+          .get(id) as Record<string, unknown>;
+
+        return {
+          ...saved,
+          configuration:
+            typeof saved.configuration === "string"
+              ? JSON.parse(saved.configuration)
+              : saved.configuration,
+          confirmationRequired: saved.confirmationRequired === 1,
+        };
+      } catch (err) {
+        console.error("rounds:create failed", err);
+        throw err;
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "rounds:update",
+    (
+      _event,
+      payload: {
+        id: string;
+        categoryId?: string;
+        name?: string;
+        description?: string;
+        configuration?: Record<string, unknown>;
+        confirmationRequired?: boolean;
+      }
+    ) => {
+      const {
+        id,
+        categoryId,
+        name,
+        description,
+        configuration,
+        confirmationRequired,
+      } = payload;
+      try {
+        const db = dbInstance ?? getDatabase();
+
+        const updates: string[] = [];
+        const params: Record<string, unknown> = { id };
+
+        if (categoryId !== undefined) {
+          updates.push("categoryId = @categoryId");
+          params.categoryId = categoryId;
+        }
+        if (name !== undefined) {
+          updates.push("name = @name");
+          params.name = name;
+        }
+        if (description !== undefined) {
+          updates.push("description = @description");
+          params.description = description;
+        }
+        if (configuration !== undefined) {
+          const existing = db
+            .prepare(`SELECT configuration FROM rounds WHERE id = ?`)
+            .get(id) as { configuration: string } | undefined;
+          let existingConfig = {};
+          if (existing) {
+            existingConfig =
+              typeof existing.configuration === "string"
+                ? JSON.parse(existing.configuration)
+                : existing.configuration;
+          }
+          const mergedConfig = { ...existingConfig, ...configuration };
+          updates.push("configuration = @configuration");
+          params.configuration = JSON.stringify(mergedConfig);
+        }
+        if (confirmationRequired !== undefined) {
+          updates.push("confirmationRequired = @confirmationRequired");
+          params.confirmationRequired = confirmationRequired ? 1 : 0;
+        }
+
+        if (updates.length > 0) {
+          db.prepare(
+            `UPDATE rounds SET ${updates.join(", ")} WHERE id = @id`
+          ).run(params);
+        }
+
+        const saved = db
+          .prepare(
+            `
+          SELECT r.*, rc.name as categoryName, rc.contentMode as categoryContentMode
+          FROM rounds r
+          LEFT JOIN round_categories rc ON r.categoryId = rc.id
+          WHERE r.id = ?
+        `
+          )
+          .get(id) as Record<string, unknown>;
+
+        return {
+          ...saved,
+          configuration:
+            typeof saved.configuration === "string"
+              ? JSON.parse(saved.configuration)
+              : saved.configuration,
+          confirmationRequired: saved.confirmationRequired === 1,
+        };
+      } catch (err) {
+        console.error("rounds:update failed", err);
+        throw err;
+      }
+    }
+  );
+
+  ipcMain.handle("rounds:delete", (_event, id: string) => {
+    try {
+      const db = dbInstance ?? getDatabase();
+      const round = db
+        .prepare(`SELECT setId, position FROM rounds WHERE id = ?`)
+        .get(id) as { setId: string; position: number } | undefined;
+
+      db.prepare(`DELETE FROM rounds WHERE id = ?`).run(id);
+
+      if (round) {
+        db.prepare(
+          `UPDATE rounds SET position = position - 1 WHERE setId = ? AND position > ?`
+        ).run(round.setId, round.position);
+      }
+
+      return { success: true };
+    } catch (err) {
+      console.error("rounds:delete failed", err);
+      throw err;
+    }
+  });
+
+  ipcMain.handle(
+    "rounds:reorder",
+    (_event, payload: { setId: string; roundIds: string[] }) => {
+      const { setId, roundIds } = payload;
+      try {
+        const db = dbInstance ?? getDatabase();
+        const stmt = db.prepare(
+          `UPDATE rounds SET position = @position WHERE id = @id AND setId = @setId`
+        );
+        roundIds.forEach((id, index) => {
+          stmt.run({ id, position: index, setId });
+        });
+        const rows = db
+          .prepare(
+            `
+          SELECT r.*, rc.name as categoryName, rc.contentMode as categoryContentMode
+          FROM rounds r
+          LEFT JOIN round_categories rc ON r.categoryId = rc.id
+          WHERE r.setId = ?
+          ORDER BY r.position ASC
+        `
+          )
+          .all(setId) as Record<string, unknown>[];
+        return rows.map((row) => ({
+          ...row,
+          configuration:
+            typeof row.configuration === "string"
+              ? JSON.parse(row.configuration)
+              : row.configuration,
+          confirmationRequired: row.confirmationRequired === 1,
+        }));
+      } catch (err) {
+        console.error("rounds:reorder failed", err);
+        throw err;
+      }
+    }
+  );
 
   createWindow();
 

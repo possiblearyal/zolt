@@ -8,6 +8,7 @@ import { Settings } from "./pages/Settings";
 import NewSet from "./pages/NewSet";
 import Onboarding from "./pages/Onboarding";
 import TeamPage from "./pages/TeamPage";
+import RoundPage from "./pages/RoundPage";
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="rounds" element={<Rounds />} />
+          <Route path="round/:id" element={<RoundPage />} />
           <Route path="questions" element={<Questions />} />
           <Route path="teams" element={<Teams />} />
           <Route path="team/:slug" element={<TeamPage />} />

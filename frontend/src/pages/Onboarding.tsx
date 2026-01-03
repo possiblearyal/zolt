@@ -6,6 +6,7 @@ import { MdOutlineAbc } from "react-icons/md";
 import ProfileImageUpload from "@/components/shared/ProfileImageUpload";
 import InputField from "@/components/shared/InputField";
 import type { OrgProfile, OrgRecord } from "@/types/org";
+import { SectionBanner } from "@/components/shared/SectionBanner";
 
 export default function Onboarding() {
   const [orgName, setOrgName] = useState("");
@@ -69,29 +70,52 @@ export default function Onboarding() {
 
   return (
     <>
-      <section
+      <form
+        onSubmit={handleSubmit}
         className="flex flex-col gap-8"
         style={{ color: "rgb(var(--color-text-primary))" }}
       >
-        <div
-          className="py-8"
-          style={{
-            background:
-              "linear-gradient(135deg, rgb(var(--color-primary)) 0%, rgb(var(--color-accent)) 100%)",
-            color: "rgb(var(--color-primary-foreground, 255 255 255))",
-          }}
-        >
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h1 className="text-4xl font-bold mb-2">Organization Setup</h1>
-            <p style={{ opacity: 0.9 }}>
-              Add your organization details to personalize the experience. You
-              can update these later in Settings.
-            </p>
-          </div>
-        </div>
+        <SectionBanner
+          title="Organization Setup"
+          description="Add your organization details to personalize the experience. You
+              can update these later in Settings."
+          action={
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                className="px-4 py-2 rounded-lg cursor-pointer transition-colors flex items-center gap-2"
+                style={{
+                  backgroundColor:
+                    "rgb(var(--color-primary-foreground, 255 255 255))",
+                  color: "rgb(var(--color-primary))",
+                }}
+                onClick={() => {
+                  setOrgName("");
+                  setMasterPin("");
+                  setImageUrl("");
+                  toast.info("Cleared");
+                }}
+                disabled={isSaving}
+              >
+                Reset
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 rounded-lg cursor-pointer transition-colors flex items-center gap-2"
+                style={{
+                  backgroundColor:
+                    "rgb(var(--color-primary-foreground, 255 255 255))",
+                  color: "rgb(var(--color-primary))",
+                }}
+                disabled={isSaving || isLoading}
+              >
+                {isSaving ? "Saving..." : "Save and continue"}
+              </button>
+            </div>
+          }
+        />
 
-        <form
-          onSubmit={handleSubmit}
+        <section
           className="space-y-6 p-6 rounded-2xl"
           style={{
             borderColor: "rgb(var(--color-border))",
@@ -147,40 +171,8 @@ export default function Onboarding() {
               onChange={(url) => setImageUrl(url)}
             />
           </div>
-
-          <div className="flex justify-end gap-3">
-            <button
-              type="button"
-              className="px-4 py-2 rounded-lg border cursor-pointer"
-              style={{
-                borderColor: "rgb(var(--color-border))",
-                color: "rgb(var(--color-text-primary))",
-                backgroundColor: "rgb(var(--color-bg-secondary))",
-              }}
-              onClick={() => {
-                setOrgName("");
-                setMasterPin("");
-                setImageUrl("");
-                toast.info("Cleared");
-              }}
-              disabled={isSaving}
-            >
-              Reset
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 rounded-lg cursor-pointer"
-              disabled={isSaving || isLoading}
-              style={{
-                backgroundColor: "rgb(var(--color-primary))",
-                color: "rgb(var(--color-primary-foreground, 255 255 255))",
-              }}
-            >
-              {isSaving ? "Saving..." : "Save and continue"}
-            </button>
-          </div>
-        </form>
-      </section>
+        </section>
+      </form>
     </>
   );
 }

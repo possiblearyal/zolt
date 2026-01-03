@@ -1,6 +1,12 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronUp, ChevronDown, Trophy, GripVertical } from "lucide-react";
+import {
+  ChevronUp,
+  ChevronDown,
+  Trophy,
+  GripVertical,
+  Plus,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   DndContext,
@@ -166,6 +172,7 @@ export function TeamScores({
   const [teams, setTeams] = useState<TeamRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const pollIntervalRef = useRef<number | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -180,9 +187,21 @@ export function TeamScores({
 
   const loadTeams = useCallback(async () => {
     try {
-      setIsLoading(true);
       const data = await window.teamsApi?.list();
-      setTeams(data ?? []);
+      if (data) {
+        setTeams((prev) => {
+          const prevIds = prev.map((t) => t.id).join(",");
+          const newIds = data.map((t: TeamRecord) => t.id).join(",");
+          if (prevIds !== newIds || prev.length !== data.length) {
+            return data;
+          }
+          const hasChanges = data.some(
+            (t: TeamRecord, i: number) =>
+              prev[i]?.name !== t.name || prev[i]?.logoUrl !== t.logoUrl
+          );
+          return hasChanges ? data : prev;
+        });
+      }
     } catch (err) {
       console.error("Failed to load teams", err);
     } finally {
@@ -192,6 +211,16 @@ export function TeamScores({
 
   useEffect(() => {
     loadTeams();
+
+    pollIntervalRef.current = setInterval(() => {
+      loadTeams();
+    }, 500);
+
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+      }
+    };
   }, [loadTeams]);
 
   const handleDragEnd = async (event: DragEndEvent) => {
@@ -224,7 +253,7 @@ export function TeamScores({
           },
           cancel: {
             label: "Cancel",
-            onClick: () => loadTeams(), 
+            onClick: () => loadTeams(),
           },
         });
         const oldIndex = teams.findIndex((t) => t.id === active.id);
@@ -320,6 +349,21 @@ export function TeamScores({
                         onNavigate={handleNavigate}
                       />
                     ))}
+                    <motion.button
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => navigate("/team/new")}
+                      className="min-w-32 h-32 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 transition-colors shrink-0"
+                      style={{
+                        borderColor: "rgb(var(--color-border))",
+                        color: "rgb(var(--color-text-muted))",
+                      }}
+                    >
+                      <Plus size={24} />
+                      <span className="text-sm font-medium">Add Team</span>
+                    </motion.button>
                   </div>
                 </SortableContext>
               </DndContext>

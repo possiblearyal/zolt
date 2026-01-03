@@ -639,13 +639,28 @@ export default function TeamPage() {
       </div>
 
       <div className="flex-1 overflow-auto">
-        <div className="px-6 py-8 space-y-8">
+        <form onSubmit={handleSubmit} className="px-6 py-8 space-y-8">
           <SectionBanner
             title="Team Details"
             description="Basic information about the team"
+            action={
+              <div className="flex items-center justify-end gap-4 pt-2">
+                <button
+                  type="submit"
+                  disabled={isSaving || !name.trim()}
+                  className="px-4 py-2 rounded-lg cursor-pointer transition-colors flex items-center gap-2"
+                  style={{
+                    backgroundColor:
+                      "rgb(var(--color-primary-foreground, 255 255 255))",
+                    color: "rgb(var(--color-primary))",
+                  }}
+                >
+                  {isSaving ? "Saving..." : isNewTeam ? "Create Team" : "Save"}
+                </button>
+              </div>
+            }
           />
-          <motion.form
-            onSubmit={handleSubmit}
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="space-y-6"
@@ -677,21 +692,7 @@ export default function TeamPage() {
                 <ProfileImageUpload value={logoUrl} onChange={setLogoUrl} />
               </div>
             </div>
-
-            <div className="flex items-center justify-end gap-4 pt-2">
-              <button
-                type="submit"
-                disabled={isSaving || !name.trim()}
-                className="px-6 py-2.5 rounded-xl font-medium transition-all duration-200 disabled:opacity-50 cursor-pointer flex items-center gap-2"
-                style={{
-                  backgroundColor: "rgb(var(--color-primary))",
-                  color: "rgb(var(--color-primary-foreground, 255 255 255))",
-                }}
-              >
-                {isSaving ? "Saving..." : isNewTeam ? "Create Team" : "Save"}
-              </button>
-            </div>
-          </motion.form>
+          </motion.div>
 
           {!isNewTeam && (
             <motion.div
@@ -759,7 +760,7 @@ export default function TeamPage() {
               </div>
             </motion.div>
           )}
-        </div>
+        </form>
       </div>
     </motion.section>
   );
